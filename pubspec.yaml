@@ -55,6 +55,10 @@ dependencies:
   http: ^1.2.1
   connectivity_plus: ^6.0.3
   equatable: ^2.0.5
+  flutter_riverpod: ^2.6.1
+  firebase_storage: ^11.6.5
+  google_sign_in: ^7.0.0
+  flutter_facebook_auth: ^7.1.2
 
 dev_dependencies:
   flutter_test:
