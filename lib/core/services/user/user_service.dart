@@ -1,285 +1,405 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:islamia/core/config/firebase_config.dart';
 import 'package:islamia/data/models/user/user_model.dart';
 import 'package:islamia/data/models/user/user_profile.dart';
-import '../base/base_service.dart';
-import '../firebase/firebase_config.dart';
-import '../exceptions/service_exception.dart';
-import '../storage/storage_service.dart';
+import '../../services/storage/local_storage_service.dart';
+import '../exceptions/database_exceptions.dart';
+import '../exceptions/validation_exceptions.dart';
 
-class UserService extends BaseService<UserModel> {
+class UserService {
   static final UserService _instance = UserService._internal();
   factory UserService() => _instance;
-  UserService._internal() : super('users');
+  UserService._internal();
 
-  final StorageService _storageService = StorageService();
+  final FirebaseFirestore _firestore = FirebaseConfig.firestore;
+  final LocalStorageService _localStorage = LocalStorageService();
 
-  @override
-  UserModel fromJson(Map<String, dynamic> json) => UserModel.fromJson(json);
+  static const String _usersCollection = 'users';
 
-  @override
-  Map<String, dynamic> toJson(UserModel model) => model.toJson();
-
-  // Create user profile
-  Future<void> createUserProfile(UserModel user) async {
+  // Create user (both local and remote)
+  Future<void> createUser(UserModel user) async {
     try {
-      if (user.id == null) {
-        throw const ValidationException('User ID cannot be null');
+      if (user.id == null || user.id!.isEmpty) {
+        throw ValidationException.required('User ID');
       }
 
-      final data = toJson(user);
-      data['createdAt'] = FieldValue.serverTimestamp();
-      data['updatedAt'] = FieldValue.serverTimestamp();
+      // Validate user data
+      _validateUserModel(user);
 
-      await doc(user.id!).set(data);
+      // Save to local storage first
+      await _localStorage.saveUser(user);
+
+      // Save to Firestore
+      await _saveUserToFirestore(user);
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      if (e is ValidationException) rethrow;
-      throw ServiceException('Failed to create user profile: $e');
+      throw DatabaseException('Failed to create user: ${e.toString()}', originalError: e);
     }
   }
 
-  // Get user profile
-  Future<UserModel?> getUserProfile(String userId) async {
+  // Get user by ID (local first, then remote)
+  Future<UserModel?> getUserById(String userId) async {
     try {
-      final docSnapshot = await doc(userId).get();
-      if (docSnapshot.exists && docSnapshot.data() != null) {
-        return fromJson(docSnapshot.data()!);
+      if (userId.isEmpty) {
+        throw ValidationException.required('User ID');
       }
-      return null;
+
+      // Try local storage first
+      UserModel? user = await _localStorage.getUser();
+      
+      // Check if the local user matches the requested ID
+      if (user?.id == userId) {
+        return user;
+      }
+      
+      // If not found locally or different user, try Firestore
+      user = await _getUserFromFirestore(userId);
+      if (user != null) {
+        // Save to local for future use
+        await _localStorage.saveUser(user);
+      }
+      
+      return user;
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      throw ServiceException('Failed to get user profile: $e');
+      throw DatabaseException('Failed to get user: ${e.toString()}', originalError: e);
     }
   }
 
-  // Update user profile
-  Future<void> updateUserProfile(UserModel user) async {
+  // Get current user from local storage
+  Future<UserModel?> getCurrentUser() async {
     try {
-      if (user.id == null) {
-        throw const ValidationException('User ID cannot be null');
-      }
-
-      final data = toJson(user);
-      data['updatedAt'] = FieldValue.serverTimestamp();
-      data.remove('createdAt'); // Don't update creation time
-
-      await doc(user.id!).update(data);
+      return await _localStorage.getUser();
     } catch (e) {
-      if (e is ValidationException) rethrow;
-      throw ServiceException('Failed to update user profile: $e');
+      throw DatabaseException('Failed to get current user: ${e.toString()}', originalError: e);
     }
   }
 
-  // Update specific user fields
-  Future<void> updateUserFields(String userId, Map<String, dynamic> fields) async {
+  // Update user
+  Future<void> updateUser(UserModel user) async {
     try {
-      fields['updatedAt'] = FieldValue.serverTimestamp();
-      await doc(userId).update(fields);
+      if (user.id == null || user.id!.isEmpty) {
+        throw ValidationException.required('User ID');
+      }
+
+      // Validate user data
+      _validateUserModel(user);
+
+      final updatedUser = user.copyWith(updatedAt: DateTime.now());
+
+      // Update local storage
+      await _localStorage.updateUser(updatedUser);
+
+      // Update Firestore
+      try {
+        await _updateUserInFirestore(updatedUser);
+      } catch (e) {
+        print('Failed to sync user to Firestore: $e');
+        // Continue with local update even if remote fails
+      }
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      throw ServiceException('Failed to update user fields: $e');
+      throw DatabaseException('Failed to update user: ${e.toString()}', originalError: e);
     }
   }
 
   // Update user preferences
   Future<void> updateUserPreferences(String userId, UserPreferences preferences) async {
     try {
-      await updateUserFields(userId, {
-        'preferences': preferences.toJson(),
-      });
+      if (userId.isEmpty) {
+        throw ValidationException.required('User ID');
+      }
+
+      // Get current user
+      final currentUser = await getCurrentUser();
+      if (currentUser?.id != userId) {
+        throw const DatabaseException('User ID mismatch or user not found');
+      }
+
+      // Validate preferences
+      _validateUserPreferences(preferences);
+
+      // Update user with new preferences
+      final updatedUser = currentUser!.copyWith(
+        preferences: preferences,
+        updatedAt: DateTime.now(),
+      );
+
+      await updateUser(updatedUser);
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      throw ServiceException('Failed to update user preferences: $e');
+      if (e is DatabaseException) rethrow;
+      throw DatabaseException('Failed to update user preferences: ${e.toString()}', originalError: e);
     }
   }
 
-  // Update user profile info
-  Future<void> updateUserProfileInfo(String userId, UserProfile profile) async {
+  // Update user profile
+  Future<void> updateUserProfile(String userId, UserProfile profile) async {
     try {
-      await updateUserFields(userId, {
-        'profile': profile.toJson(),
-      });
-    } catch (e) {
-      throw ServiceException('Failed to update user profile info: $e');
-    }
-  }
+      if (userId.isEmpty) {
+        throw ValidationException.required('User ID');
+      }
 
-  // Update profile image
-  Future<String> updateProfileImage(String userId, File imageFile) async {
-    try {
-      // Upload image to Firebase Storage
-      final imageUrl = await _storageService.uploadProfileImage(userId, imageFile);
-      
-      // Update user profile with new image URL
-      await updateUserFields(userId, {
-        'photoURL': imageUrl,
-      });
+      // Get current user
+      final currentUser = await getCurrentUser();
+      if (currentUser?.id != userId) {
+        throw const DatabaseException('User ID mismatch or user not found');
+      }
 
-      return imageUrl;
-    } catch (e) {
-      throw ServiceException('Failed to update profile image: $e');
-    }
-  }
+      // Validate profile
+      _validateUserProfile(profile);
 
-  // Delete profile image
-  Future<void> deleteProfileImage(String userId) async {
-    try {
-      // Delete from storage
-      await _storageService.deleteProfileImage(userId);
-      
-      // Update user profile
-      await updateUserFields(userId, {
-        'photoURL': FieldValue.delete(),
-      });
+      // Update user with new profile
+      final updatedUser = currentUser!.copyWith(
+        profile: profile,
+        updatedAt: DateTime.now(),
+      );
+
+      await updateUser(updatedUser);
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      throw ServiceException('Failed to delete profile image: $e');
+      if (e is DatabaseException) rethrow;
+      throw DatabaseException('Failed to update user profile: ${e.toString()}', originalError: e);
     }
   }
 
   // Update last login time
   Future<void> updateLastLoginTime(String userId) async {
     try {
-      await updateUserFields(userId, {
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      throw ServiceException('Failed to update last login time: $e');
-    }
-  }
+      if (userId.isEmpty) {
+        throw ValidationException.required('User ID');
+      }
 
-  // Delete user profile
-  Future<void> deleteUserProfile(String userId) async {
-    try {
-      // Delete profile image if exists
+      final currentUser = await getCurrentUser();
+      if (currentUser?.id == userId) {
+        final updatedUser = currentUser!.copyWith(
+          lastLoginAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await _localStorage.updateUser(updatedUser);
+      }
+
+      // Update Firestore
       try {
-        await _storageService.deleteProfileImage(userId);
+        await _firestore.collection(_usersCollection).doc(userId).update({
+          'lastLoginAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       } catch (e) {
-        // Ignore if image doesn't exist
+        print('Failed to sync last login time to Firestore: $e');
+      }
+    } on ValidationException {
+      rethrow;
+    } catch (e) {
+      throw DatabaseException('Failed to update last login time: ${e.toString()}', originalError: e);
+    }
+  }
+
+  // Delete user
+  Future<void> deleteUser(String userId) async {
+    try {
+      if (userId.isEmpty) {
+        throw ValidationException.required('User ID');
       }
 
-      // Delete user document
-      await doc(userId).delete();
+      // Delete from local storage
+      await _localStorage.deleteUser();
+
+      // Delete from Firestore
+      await _deleteUserFromFirestore(userId);
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      throw ServiceException('Failed to delete user profile: $e');
+      throw DatabaseException('Failed to delete user: ${e.toString()}', originalError: e);
     }
   }
 
-  // Check if user exists
-  Future<bool> userExists(String userId) async {
+  // Sync user data with Firestore
+  Future<void> syncUserData() async {
     try {
-      final docSnapshot = await doc(userId).get();
-      return docSnapshot.exists;
-    } catch (e) {
-      throw ServiceException('Failed to check if user exists: $e');
-    }
-  }
+      final localUser = await getCurrentUser();
+      if (localUser == null || localUser.id == null) return;
 
-  // Search users by display name
-  Future<List<UserModel>> searchUsersByDisplayName(
-    String searchTerm, {
-    int limit = 20,
-  }) async {
-    try {
-      final query = collection
-          .where('displayName', isGreaterThanOrEqualTo: searchTerm)
-          .where('displayName', isLessThan: '${searchTerm}z')
-          .limit(limit);
-
-      final snapshot = await query.get();
-      return snapshot.docs.map((doc) => fromJson(doc.data())).toList();
-    } catch (e) {
-      throw ServiceException('Failed to search users: $e');
-    }
-  }
-
-  // Get users by IDs
-  Future<List<UserModel>> getUsersByIds(List<String> userIds) async {
-    try {
-      if (userIds.isEmpty) return [];
+      // Get latest data from Firestore
+      final remoteUser = await _getUserFromFirestore(localUser.id!);
       
-      // Firestore 'in' queries are limited to 10 items
-      final chunks = <List<String>>[];
-      for (int i = 0; i < userIds.length; i += 10) {
-        chunks.add(userIds.sublist(i, i + 10 > userIds.length ? userIds.length : i + 10));
+      if (remoteUser == null) {
+        // User doesn't exist remotely, create it
+        await _saveUserToFirestore(localUser);
+      } else {
+        // Compare timestamps and sync accordingly
+        final localUpdated = localUser.updatedAt ?? localUser.createdAt ?? DateTime.now();
+        final remoteUpdated = remoteUser.updatedAt ?? remoteUser.createdAt ?? DateTime.now();
+        
+        if (remoteUpdated.isAfter(localUpdated)) {
+          // Remote is newer, update local
+          await _localStorage.saveUser(remoteUser);
+        } else if (localUpdated.isAfter(remoteUpdated)) {
+          // Local is newer, update remote
+          await _updateUserInFirestore(localUser);
+        }
       }
 
-      final List<UserModel> users = [];
-      for (final chunk in chunks) {
-        final query = collection.where(FieldPath.documentId, whereIn: chunk);
-        final snapshot = await query.get();
-        users.addAll(snapshot.docs.map((doc) => fromJson(doc.data())));
-      }
-
-      return users;
+      await _localStorage.saveLastSyncTime(DateTime.now());
     } catch (e) {
-      throw ServiceException('Failed to get users by IDs: $e');
+      throw DatabaseException('Failed to sync user data: ${e.toString()}', originalError: e);
     }
   }
 
-  // Get user profile stream for real-time updates
-  Stream<UserModel?> getUserProfileStream(String userId) {
+  // Check if sync is needed
+  Future<bool> needsSync() async {
     try {
-      return doc(userId).snapshots().map((snapshot) {
+      final lastSync = await _localStorage.getLastSyncTime();
+      if (lastSync == null) return true;
+      
+      final now = DateTime.now();
+      final timeDifference = now.difference(lastSync);
+      
+      // Sync if more than 1 hour has passed
+      return timeDifference.inHours >= 1;
+    } catch (e) {
+      return true; // Assume sync is needed if there's an error
+    }
+  }
+
+  // Validation methods
+  void _validateUserModel(UserModel user) {
+    if (user.email != null && user.email!.isNotEmpty) {
+      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(user.email!)) {
+        throw ValidationException.invalidFormat('Email', expectedFormat: 'example@domain.com');
+      }
+    }
+
+    if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) {
+      if (!RegExp(r'^\+[1-9]\d{1,14}$').hasMatch(user.phoneNumber!)) {
+        throw ValidationException.invalidFormat('Phone number', expectedFormat: '+1234567890');
+      }
+    }
+
+    if (user.displayName != null && user.displayName!.isNotEmpty) {
+      if (user.displayName!.length < 2) {
+        throw ValidationException.tooShort('Display name', 2);
+      }
+      if (user.displayName!.length > 50) {
+        throw ValidationException.tooLong('Display name', 50);
+      }
+    }
+  }
+
+  void _validateUserPreferences(UserPreferences preferences) {
+    if (preferences.fontSize < 8.0 || preferences.fontSize > 32.0) {
+      throw ValidationException.outOfRange('Font size', min: 8.0, max: 32.0);
+    }
+
+    if (!['en', 'ar', 'bn', 'ur', 'tr', 'fr', 'de', 'es'].contains(preferences.language)) {
+      throw ValidationException.invalidFormat('Language', expectedFormat: 'Supported language code');
+    }
+
+    if (!['ISNA', 'MWL', 'Egypt', 'Makkah', 'Karachi', 'Tehran', 'Jafari'].contains(preferences.calculationMethod)) {
+      throw ValidationException.invalidFormat('Calculation method');
+    }
+
+    if (!['Shafi', 'Hanafi', 'Maliki', 'Hanbali'].contains(preferences.madhab)) {
+      throw ValidationException.invalidFormat('Madhab');
+    }
+  }
+
+  void _validateUserProfile(UserProfile profile) {
+    if (profile.firstName != null && profile.firstName!.isNotEmpty) {
+      if (profile.firstName!.length > 30) {
+        throw ValidationException.tooLong('First name', 30);
+      }
+    }
+
+    if (profile.lastName != null && profile.lastName!.isNotEmpty) {
+      if (profile.lastName!.length > 30) {
+        throw ValidationException.tooLong('Last name', 30);
+      }
+    }
+
+    if (profile.dateOfBirth != null) {
+      final now = DateTime.now();
+      final age = now.difference(profile.dateOfBirth!).inDays ~/ 365;
+      if (age < 0 || age > 150) {
+        throw ValidationException.outOfRange('Age', min: 0, max: 150);
+      }
+    }
+
+    if (profile.gender != null && profile.gender!.isNotEmpty) {
+      if (!['male', 'female', 'other'].contains(profile.gender!.toLowerCase())) {
+        throw ValidationException.invalidFormat('Gender', expectedFormat: 'male, female, or other');
+      }
+    }
+  }
+
+  // Private methods for Firestore operations
+  Future<void> _saveUserToFirestore(UserModel user) async {
+    try {
+      final data = user.toJson();
+      data['createdAt'] = FieldValue.serverTimestamp();
+      data['updatedAt'] = FieldValue.serverTimestamp();
+      
+      await _firestore.collection(_usersCollection).doc(user.id).set(data);
+    } catch (e) {
+      throw DatabaseException.fromFirestore(e);
+    }
+  }
+
+  Future<UserModel?> _getUserFromFirestore(String userId) async {
+    try {
+      final doc = await _firestore.collection(_usersCollection).doc(userId).get();
+      
+      if (!doc.exists || doc.data() == null) return null;
+      
+      return UserModel.fromJson(doc.data()!);
+    } catch (e) {
+      throw DatabaseException.fromFirestore(e);
+    }
+  }
+
+  Future<void> _updateUserInFirestore(UserModel user) async {
+    try {
+      final data = user.toJson();
+      data['updatedAt'] = FieldValue.serverTimestamp();
+      data.remove('createdAt'); // Don't update creation time
+      
+      await _firestore.collection(_usersCollection).doc(user.id).update(data);
+    } catch (e) {
+      throw DatabaseException.fromFirestore(e);
+    }
+  }
+
+  Future<void> _deleteUserFromFirestore(String userId) async {
+    try {
+      await _firestore.collection(_usersCollection).doc(userId).delete();
+    } catch (e) {
+      throw DatabaseException.fromFirestore(e);
+    }
+  }
+
+  // Stream for real-time updates
+  Stream<UserModel?> getUserStream(String userId) {
+    try {
+      return _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .snapshots()
+          .map((snapshot) {
         if (snapshot.exists && snapshot.data() != null) {
-          return fromJson(snapshot.data()!);
+          final user = UserModel.fromJson(snapshot.data()!);
+          // Update local storage in background
+          _localStorage.saveUser(user).catchError((e) => print('Failed to save user locally: $e'));
+          return user;
         }
         return null;
       });
     } catch (e) {
-      throw ServiceException('Failed to get user profile stream: $e');
+      throw DatabaseException.fromFirestore(e);
     }
-  }
-
-  // Batch update users
-  Future<void> batchUpdateUsers(Map<String, Map<String, dynamic>> updates) async {
-    try {
-      final batch = FirebaseConfig.firestore.batch();
-      
-      updates.forEach((userId, fields) {
-        fields['updatedAt'] = FieldValue.serverTimestamp();
-        batch.update(doc(userId), fields);
-      });
-
-      await batch.commit();
-    } catch (e) {
-      throw ServiceException('Failed to batch update users: $e');
-    }
-  }
-
-  // Export user data
-  Future<Map<String, dynamic>> exportUserData(String userId) async {
-    try {
-      final user = await getUserProfile(userId);
-      if (user == null) {
-        throw const ServiceException('User not found');
-      }
-
-      return {
-        'profile': toJson(user),
-        'exportedAt': DateTime.now().toIso8601String(),
-      };
-    } catch (e) {
-      throw ServiceException('Failed to export user data: $e');
-    }
-  }
-
-  // Validate user data
-  void validateUserData(UserModel user) {
-    if (user.id == null || user.id!.isEmpty) {
-      throw const ValidationException('User ID is required');
-    }
-
-    if (user.email != null && !_isValidEmail(user.email!)) {
-      throw const ValidationException('Invalid email format');
-    }
-
-    if (user.phoneNumber != null && !_isValidPhoneNumber(user.phoneNumber!)) {
-      throw const ValidationException('Invalid phone number format');
-    }
-  }
-
-  bool _isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
-  }
-
-  bool _isValidPhoneNumber(String phoneNumber) {
-    return RegExp(r'^\+[1-9]\d{1,14}$').hasMatch(phoneNumber);
   }
 }

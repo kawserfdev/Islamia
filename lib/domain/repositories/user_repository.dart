@@ -22,6 +22,7 @@ abstract class UserRepository {
 
 class UserRepositoryImpl implements UserRepository {
   final UserService _userService;
+  
   final AuthService _authService;
 
   UserRepositoryImpl({
