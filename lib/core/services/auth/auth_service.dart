@@ -7,7 +7,7 @@ import 'package:islamia/data/models/auth_result.dart';
 import 'package:islamia/data/models/prayer/prayer_notification_settings.dart';
 import 'package:islamia/data/models/user/user_model.dart';
 import 'package:islamia/data/models/user/user_profile.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+//import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import '../user/user_service.dart';
 import '../storage/local_storage_service.dart';
@@ -211,71 +211,71 @@ class AuthService {
   }
 
   // Sign in with Apple
-  Future<AuthResult> signInWithApple() async {
-    try {
-      final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
+  // Future<AuthResult> signInWithApple() async {
+  //   try {
+  //     final appleCredential = await SignInWithApple.getAppleIDCredential(
+  //       scopes: [
+  //         AppleIDAuthorizationScopes.email,
+  //         AppleIDAuthorizationScopes.fullName,
+  //       ],
+  //     );
 
-      final oauthCredential = OAuthProvider("apple.com").credential(
-        idToken: appleCredential.identityToken,
-        accessToken: appleCredential.authorizationCode,
-      );
+  //     final oauthCredential = OAuthProvider("apple.com").credential(
+  //       idToken: appleCredential.identityToken,
+  //       accessToken: appleCredential.authorizationCode,
+  //     );
 
-      final userCredential = await _auth.signInWithCredential(oauthCredential);
-      final user = userCredential.user;
+  //     final userCredential = await _auth.signInWithCredential(oauthCredential);
+  //     final user = userCredential.user;
       
-      if (user == null) {
-        throw const AuthException('Failed to sign in with Apple');
-      }
+  //     if (user == null) {
+  //       throw const AuthException('Failed to sign in with Apple');
+  //     }
 
-      final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-      UserModel? userModel;
+  //     final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+  //     UserModel? userModel;
 
-      if (isNewUser) {
-        String? displayName;
-        if (appleCredential.givenName != null || appleCredential.familyName != null) {
-          displayName = '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'.trim();
-        }
+  //     if (isNewUser) {
+  //       String? displayName;
+  //       if (appleCredential.givenName != null || appleCredential.familyName != null) {
+  //         displayName = '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'.trim();
+  //       }
 
-        userModel = UserModel(
-          id: user.uid,
-          email: user.email ?? appleCredential.email,
-          displayName: displayName ?? user.displayName,
-          isEmailVerified: user.emailVerified,
-          createdAt: DateTime.now(),
-          lastLoginAt: DateTime.now(),
-          preferences: const UserPreferences(
-            prayerNotifications: PrayerNotificationSettings(),
-          ),
-          profile: const UserProfile(),
-        );
-        await _userService.createUser(userModel);
-      } else {
-        userModel = await _userService.getUserById(user.uid);
-        if (userModel != null) {
-          await _userService.updateLastLoginTime(user.uid);
-        }
-      }
+  //       userModel = UserModel(
+  //         id: user.uid,
+  //         email: user.email ?? appleCredential.email,
+  //         displayName: displayName ?? user.displayName,
+  //         isEmailVerified: user.emailVerified,
+  //         createdAt: DateTime.now(),
+  //         lastLoginAt: DateTime.now(),
+  //         preferences: const UserPreferences(
+  //           prayerNotifications: PrayerNotificationSettings(),
+  //         ),
+  //         profile: const UserProfile(),
+  //       );
+  //       await _userService.createUser(userModel);
+  //     } else {
+  //       userModel = await _userService.getUserById(user.uid);
+  //       if (userModel != null) {
+  //         await _userService.updateLastLoginTime(user.uid);
+  //       }
+  //     }
 
-      // Save auth token locally
-      final token = await user.getIdToken();
-      await _localStorage.saveAuthToken(token!);
+  //     // Save auth token locally
+  //     final token = await user.getIdToken();
+  //     await _localStorage.saveAuthToken(token!);
 
-      return AuthResult(
-        user: user,
-        userModel: userModel,
-        isNewUser: isNewUser,
-        requiresEmailVerification: false,
-      );
-    } catch (e) {
-      if (e is AuthException) rethrow;
-      throw AuthException('Failed to sign in with Apple: $e');
-    }
-  }
+  //     return AuthResult(
+  //       user: user,
+  //       userModel: userModel,
+  //       isNewUser: isNewUser,
+  //       requiresEmailVerification: false,
+  //     );
+  //   } catch (e) {
+  //     if (e is AuthException) rethrow;
+  //     throw AuthException('Failed to sign in with Apple: $e');
+  //   }
+  // }
 
   // Sign in with Facebook
   Future<AuthResult> signInWithFacebook() async {

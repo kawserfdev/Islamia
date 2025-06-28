@@ -1,204 +1,106 @@
 import 'package:flutter/material.dart';
+import '../constants/app_constants.dart';
 
 class AppTheme {
-  // Light theme colors
-  static const Color lightPrimary = Color(0xFF078A24);
-  static const Color lightAccent = Color(0xFF028688);
-  static const Color lightBackground = Color(0xFFF5F7FA);
-  static const Color lightCard = Colors.white;
-  static const Color lightText = Color(0xFF212121);
-  static const Color lightHint = Color(0xFF9E9E9E);
+  static const Color primaryColor = Color(AppConstants.primaryColorValue);
+  static const Color secondaryColor = Color(AppConstants.secondaryColorValue);
+  static const Color accentColor = Color(AppConstants.accentColorValue);
 
-  // Dark theme colors
-  static const Color darkPrimary = Color(0xFF03C0C2);
-  static const Color darkAccent = Color(0xFF15D3D6);
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkCard = Color(0xFF1E1E1E);
-  static const Color darkText = Colors.white;
-  static const Color darkHint = Color(0xFFBDBDBD);
-
-  // Common colors
-  static const Color success = Color(0xFF4CAF50);
-  static const Color error = Color(0xFFF44336);
-  static const Color warning = Color(0xFFFF9800);
-  static const Color info = Color(0xFF2196F3);
-
-  // Light theme
-  static final ThemeData lightTheme = ThemeData(
-    //useMaterial3: true,
-    primaryColor: lightPrimary,
-    colorScheme: ColorScheme.light(
-      primary: lightPrimary,
-      secondary: lightAccent,
-      background: lightBackground,
-      surface: lightCard,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onBackground: lightText,
-      onSurface: lightText,
-      error: error,
-      onError: Colors.white,
-    ),
-    scaffoldBackgroundColor: lightBackground,
-
-    cardTheme: CardThemeData(
-      color: lightCard,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: lightBackground,
-      elevation: 0,
-      iconTheme: IconThemeData(color: lightText),
-      titleTextStyle: TextStyle(
-        color: lightText,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryColor,
+        brightness: Brightness.light,
       ),
-    ),
-    iconTheme: IconThemeData(color: lightPrimary),
-    textTheme: TextTheme(
-      headlineLarge: TextStyle(color: lightText),
-      headlineMedium: TextStyle(color: lightText),
-      headlineSmall: TextStyle(color: lightText),
-      bodyLarge: TextStyle(color: lightText),
-      bodyMedium: TextStyle(color: lightText),
-      bodySmall: TextStyle(color: lightHint),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: lightPrimary),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: lightPrimary, width: 2),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: lightHint.withOpacity(0.2)),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: lightPrimary,
-        foregroundColor: Colors.white,
+      appBarTheme: const AppBarTheme(
+        centerTitle: true,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: Colors.transparent,
+        foregroundColor: primaryColor,
       ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: lightPrimary,
-        side: const BorderSide(color: lightPrimary),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      cardTheme: CardThemeData(
+        elevation: AppConstants.cardElevation,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+        ),
       ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: lightPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
       ),
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Colors.white,
-      selectedItemColor: lightPrimary,
-      unselectedItemColor: lightHint,
-      type: BottomNavigationBarType.fixed,
-      elevation: 8,
-    ),
-  );
+      textTheme: const TextTheme(
+        headlineLarge: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          color: primaryColor,
+        ),
+        headlineMedium: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+        headlineSmall: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          height: 1.5,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          height: 1.4,
+        ),
+        bodySmall: TextStyle(
+          fontSize: 12,
+          height: 1.3,
+        ),
+      ),
+    );
+  }
 
-  // Dark theme
-  static final ThemeData darkTheme = ThemeData(
-    primaryColor: darkPrimary,
-    colorScheme: ColorScheme.dark(
-      primary: darkPrimary,
-      secondary: darkAccent,
-      background: darkBackground,
-      surface: darkCard,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onBackground: darkText,
-      onSurface: darkText,
-      error: error,
-      onError: Colors.white,
-    ),
-    scaffoldBackgroundColor: darkBackground,
-    cardTheme: CardThemeData(
-      color: darkCard,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-
-    appBarTheme: AppBarTheme(
-      backgroundColor: darkBackground,
-      elevation: 0,
-      iconTheme: IconThemeData(color: darkText),
-      titleTextStyle: TextStyle(
-        color: darkText,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryColor,
+        brightness: Brightness.dark,
       ),
-    ),
-    iconTheme: IconThemeData(color: darkPrimary),
-    textTheme: TextTheme(
-      headlineLarge: TextStyle(color: darkText),
-      headlineMedium: TextStyle(color: darkText),
-      headlineSmall: TextStyle(color: darkText),
-      bodyLarge: TextStyle(color: darkText),
-      bodyMedium: TextStyle(color: darkText),
-      bodySmall: TextStyle(color: darkHint),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: darkCard,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: darkPrimary),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: darkPrimary, width: 2),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade700),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: darkPrimary,
-        foregroundColor: Colors.white,
+      appBarTheme: const AppBarTheme(
+        centerTitle: true,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: Colors.transparent,
       ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: darkPrimary,
-        side: const BorderSide(color: darkPrimary),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      cardTheme: CardThemeData(
+        elevation: AppConstants.cardElevation,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+        ),
       ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: darkPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
       ),
-    ),
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: darkCard,
-      selectedItemColor: darkPrimary,
-      unselectedItemColor: darkHint,
-      type: BottomNavigationBarType.fixed,
-      elevation: 8,
-    ),
-  );
+    );
+  }
 }

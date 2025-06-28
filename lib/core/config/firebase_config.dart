@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:islamia/firebase_options.dart';
 
 class FirebaseConfig {
   static FirebaseApp? _app;
@@ -13,16 +14,8 @@ class FirebaseConfig {
 
   static Future<void> initialize() async {
     try {
-      _app = await Firebase.initializeApp(
-        options: const FirebaseOptions(
-          apiKey: "your-api-key",
-          authDomain: "your-auth-domain",
-          projectId: "your-project-id",
-          storageBucket: "your-storage-bucket",
-          messagingSenderId: "your-sender-id",
-          appId: "your-app-id",
-        ),
-      );
+      _app =  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
 
       _auth = FirebaseAuth.instance;
       _firestore = FirebaseFirestore.instance;

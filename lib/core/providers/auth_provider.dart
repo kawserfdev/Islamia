@@ -20,10 +20,10 @@ final currentUserProvider = FutureProvider<UserModel?>((ref) async {
   try {
     final authService = ref.read(authServiceProvider);
     final userService = ref.read(userServiceProvider);
-    
+
     final firebaseUser = authService.currentUser;
     if (firebaseUser == null) return null;
-    
+
     return await userService.getUserById(firebaseUser.uid);
   } catch (e) {
     print('Error getting current user: ${ExceptionHandler.getErrorMessage(e)}');
@@ -32,19 +32,25 @@ final currentUserProvider = FutureProvider<UserModel?>((ref) async {
 });
 
 // User stream provider
-final userStreamProvider = StreamProvider.family<UserModel?, String>((ref, userId) {
+final userStreamProvider = StreamProvider.family<UserModel?, String>((
+  ref,
+  userId,
+) {
   final userService = ref.read(userServiceProvider);
   return userService.getUserStream(userId);
 });
 
 // Auth controller
-final authControllerProvider = StateNotifierProvider<AuthController, AuthState>((ref) {
-  return AuthController(ref.read(authServiceProvider));
-});
+final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
+  (ref) {
+    return AuthController(ref.read(authServiceProvider));
+  },
+);
 
 // Auth state
 class AuthState {
   final bool isLoading;
+  final bool isGoogleLoading;
   final String? error;
   final bool isAuthenticated;
   final User? firebaseUser;
@@ -53,6 +59,7 @@ class AuthState {
 
   const AuthState({
     this.isLoading = false,
+    this.isGoogleLoading = false,
     this.error,
     this.isAuthenticated = false,
     this.firebaseUser,
@@ -62,6 +69,7 @@ class AuthState {
 
   AuthState copyWith({
     bool? isLoading,
+    bool? isGoogleLoading,
     String? error,
     bool? isAuthenticated,
     User? firebaseUser,
@@ -70,11 +78,13 @@ class AuthState {
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
+      isGoogleLoading: isGoogleLoading ?? this.isGoogleLoading,
       error: error,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       firebaseUser: firebaseUser ?? this.firebaseUser,
       userModel: userModel ?? this.userModel,
-      requiresEmailVerification: requiresEmailVerification ?? this.requiresEmailVerification,
+      requiresEmailVerification:
+          requiresEmailVerification ?? this.requiresEmailVerification,
     );
   }
 
@@ -89,22 +99,19 @@ class AuthController extends StateNotifier<AuthState> {
   AuthController(this._authService) : super(const AuthState()) {
     // Listen to auth state changes
     _authService.authStateChanges.listen((user) {
-      state = state.copyWith(
-        isAuthenticated: user != null,
-        firebaseUser: user,
-      );
+      state = state.copyWith(isAuthenticated: user != null, firebaseUser: user);
     });
   }
 
   Future<void> signInWithEmailAndPassword(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await _authService.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: true,
@@ -126,14 +133,14 @@ class AuthController extends StateNotifier<AuthState> {
     required String displayName,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await _authService.signUpWithEmailAndPassword(
         email: email,
         password: password,
         displayName: displayName,
       );
-      
+
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: true,
@@ -150,13 +157,13 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
-    state = state.copyWith(isLoading: true, error: null);
-    
+    state = state.copyWith(isGoogleLoading: true, error: null);
+
     try {
       final result = await _authService.signInWithGoogle();
-      
+
       state = state.copyWith(
-        isLoading: false,
+        isGoogleLoading: false,
         isAuthenticated: true,
         firebaseUser: result.user,
         userModel: result.userModel,
@@ -164,39 +171,39 @@ class AuthController extends StateNotifier<AuthState> {
       );
     } catch (e) {
       state = state.copyWith(
-        isLoading: false,
+        isGoogleLoading: false,
         error: ExceptionHandler.getErrorMessage(e),
       );
     }
   }
 
-  Future<void> signInWithApple() async {
-    state = state.copyWith(isLoading: true, error: null);
-    
-    try {
-      final result = await _authService.signInWithApple();
-      
-      state = state.copyWith(
-        isLoading: false,
-        isAuthenticated: true,
-        firebaseUser: result.user,
-        userModel: result.userModel,
-        requiresEmailVerification: result.requiresEmailVerification,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: ExceptionHandler.getErrorMessage(e),
-      );
-    }
-  }
+  // Future<void> signInWithApple() async {
+  //   state = state.copyWith(isLoading: true, error: null);
+
+  //   try {
+  //     final result = await _authService.signInWithApple();
+
+  //     state = state.copyWith(
+  //       isLoading: false,
+  //       isAuthenticated: true,
+  //       firebaseUser: result.user,
+  //       userModel: result.userModel,
+  //       requiresEmailVerification: result.requiresEmailVerification,
+  //     );
+  //   } catch (e) {
+  //     state = state.copyWith(
+  //       isLoading: false,
+  //       error: ExceptionHandler.getErrorMessage(e),
+  //     );
+  //   }
+  // }
 
   Future<void> signInWithFacebook() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await _authService.signInWithFacebook();
-      
+
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: true,
@@ -214,7 +221,7 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> sendPasswordResetEmail(String email) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       await _authService.sendPasswordResetEmail(email);
       state = state.copyWith(isLoading: false);
@@ -228,7 +235,7 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> sendEmailVerification() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       await _authService.sendEmailVerification();
       state = state.copyWith(isLoading: false);
@@ -250,15 +257,13 @@ class AuthController extends StateNotifier<AuthState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(
-        error: ExceptionHandler.getErrorMessage(e),
-      );
+      state = state.copyWith(error: ExceptionHandler.getErrorMessage(e));
     }
   }
 
   Future<void> signOut() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       await _authService.signOut();
       state = const AuthState();
@@ -272,7 +277,7 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> deleteAccount() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       await _authService.deleteAccount();
       state = const AuthState();

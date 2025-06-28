@@ -37,7 +37,7 @@ class UserRepositoryImpl implements UserRepository {
       final currentUser = _authService.currentUser;
       if (currentUser == null) return null;
       
-      return await _userService.getUserProfile(currentUser.uid);
+      return await _userService.getUserById(currentUser.uid);
     } catch (e) {
       throw ServiceException('Failed to get current user: $e');
     }
@@ -46,7 +46,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<UserModel?> getUserById(String userId) async {
     try {
-      return await _userService.getUserProfile(userId);
+      return await _userService.getUserById(userId);
     } catch (e) {
       throw ServiceException('Failed to get user by ID: $e');
     }
@@ -55,8 +55,8 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<void> updateUser(UserModel user) async {
     try {
-      _userService.validateUserData(user);
-      await _userService.updateUserProfile(user);
+      _userService.updateUser(user);
+      //await _userService.updateUserProfile(user);
     } catch (e) {
       if (e is ValidationException) rethrow;
       throw ServiceException('Failed to update user: $e');
@@ -75,7 +75,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<void> updateUserProfile(String userId, UserProfile profile) async {
     try {
-      await _userService.updateUserProfileInfo(userId, profile);
+      await _userService.updateUserProfile(userId, profile);
     } catch (e) {
       throw ServiceException('Failed to update user profile: $e');
     }
@@ -102,7 +102,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<void> deleteUser(String userId) async {
     try {
-      await _userService.deleteUserProfile(userId);
+      await _userService.deleteUser(userId);
     } catch (e) {
       throw ServiceException('Failed to delete user: $e');
     }
@@ -111,7 +111,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Stream<UserModel?> getUserStream(String userId) {
     try {
-      return _userService.getUserProfileStream(userId);
+      return _userService.getUserStream(userId);
     } catch (e) {
       throw ServiceException('Failed to get user stream: $e');
     }

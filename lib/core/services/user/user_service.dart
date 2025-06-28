@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:islamia/core/config/firebase_config.dart';
 import 'package:islamia/data/models/user/user_model.dart';
@@ -34,7 +36,10 @@ class UserService {
     } on ValidationException {
       rethrow;
     } catch (e) {
-      throw DatabaseException('Failed to create user: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to create user: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
@@ -47,24 +52,27 @@ class UserService {
 
       // Try local storage first
       UserModel? user = await _localStorage.getUser();
-      
+
       // Check if the local user matches the requested ID
       if (user?.id == userId) {
         return user;
       }
-      
+
       // If not found locally or different user, try Firestore
       user = await _getUserFromFirestore(userId);
       if (user != null) {
         // Save to local for future use
         await _localStorage.saveUser(user);
       }
-      
+
       return user;
     } on ValidationException {
       rethrow;
     } catch (e) {
-      throw DatabaseException('Failed to get user: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to get user: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
@@ -73,7 +81,10 @@ class UserService {
     try {
       return await _localStorage.getUser();
     } catch (e) {
-      throw DatabaseException('Failed to get current user: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to get current user: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
@@ -102,12 +113,18 @@ class UserService {
     } on ValidationException {
       rethrow;
     } catch (e) {
-      throw DatabaseException('Failed to update user: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to update user: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
   // Update user preferences
-  Future<void> updateUserPreferences(String userId, UserPreferences preferences) async {
+  Future<void> updateUserPreferences(
+    String userId,
+    UserPreferences preferences,
+  ) async {
     try {
       if (userId.isEmpty) {
         throw ValidationException.required('User ID');
@@ -133,7 +150,10 @@ class UserService {
       rethrow;
     } catch (e) {
       if (e is DatabaseException) rethrow;
-      throw DatabaseException('Failed to update user preferences: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to update user preferences: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
@@ -164,7 +184,10 @@ class UserService {
       rethrow;
     } catch (e) {
       if (e is DatabaseException) rethrow;
-      throw DatabaseException('Failed to update user profile: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to update user profile: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
@@ -196,7 +219,10 @@ class UserService {
     } on ValidationException {
       rethrow;
     } catch (e) {
-      throw DatabaseException('Failed to update last login time: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to update last login time: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
@@ -215,7 +241,10 @@ class UserService {
     } on ValidationException {
       rethrow;
     } catch (e) {
-      throw DatabaseException('Failed to delete user: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to delete user: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
@@ -227,15 +256,17 @@ class UserService {
 
       // Get latest data from Firestore
       final remoteUser = await _getUserFromFirestore(localUser.id!);
-      
+
       if (remoteUser == null) {
         // User doesn't exist remotely, create it
         await _saveUserToFirestore(localUser);
       } else {
         // Compare timestamps and sync accordingly
-        final localUpdated = localUser.updatedAt ?? localUser.createdAt ?? DateTime.now();
-        final remoteUpdated = remoteUser.updatedAt ?? remoteUser.createdAt ?? DateTime.now();
-        
+        final localUpdated =
+            localUser.updatedAt ?? localUser.createdAt ?? DateTime.now();
+        final remoteUpdated =
+            remoteUser.updatedAt ?? remoteUser.createdAt ?? DateTime.now();
+
         if (remoteUpdated.isAfter(localUpdated)) {
           // Remote is newer, update local
           await _localStorage.saveUser(remoteUser);
@@ -247,7 +278,10 @@ class UserService {
 
       await _localStorage.saveLastSyncTime(DateTime.now());
     } catch (e) {
-      throw DatabaseException('Failed to sync user data: ${e.toString()}', originalError: e);
+      throw DatabaseException(
+        'Failed to sync user data: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 
@@ -256,10 +290,10 @@ class UserService {
     try {
       final lastSync = await _localStorage.getLastSyncTime();
       if (lastSync == null) return true;
-      
+
       final now = DateTime.now();
       final timeDifference = now.difference(lastSync);
-      
+
       // Sync if more than 1 hour has passed
       return timeDifference.inHours >= 1;
     } catch (e) {
@@ -271,13 +305,19 @@ class UserService {
   void _validateUserModel(UserModel user) {
     if (user.email != null && user.email!.isNotEmpty) {
       if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(user.email!)) {
-        throw ValidationException.invalidFormat('Email', expectedFormat: 'example@domain.com');
+        throw ValidationException.invalidFormat(
+          'Email',
+          expectedFormat: 'example@domain.com',
+        );
       }
     }
 
     if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) {
       if (!RegExp(r'^\+[1-9]\d{1,14}$').hasMatch(user.phoneNumber!)) {
-        throw ValidationException.invalidFormat('Phone number', expectedFormat: '+1234567890');
+        throw ValidationException.invalidFormat(
+          'Phone number',
+          expectedFormat: '+1234567890',
+        );
       }
     }
 
@@ -296,15 +336,40 @@ class UserService {
       throw ValidationException.outOfRange('Font size', min: 8.0, max: 32.0);
     }
 
-    if (!['en', 'ar', 'bn', 'ur', 'tr', 'fr', 'de', 'es'].contains(preferences.language)) {
-      throw ValidationException.invalidFormat('Language', expectedFormat: 'Supported language code');
+    if (![
+      'en',
+      'ar',
+      'bn',
+      'ur',
+      'tr',
+      'fr',
+      'de',
+      'es',
+    ].contains(preferences.language)) {
+      throw ValidationException.invalidFormat(
+        'Language',
+        expectedFormat: 'Supported language code',
+      );
     }
 
-    if (!['ISNA', 'MWL', 'Egypt', 'Makkah', 'Karachi', 'Tehran', 'Jafari'].contains(preferences.calculationMethod)) {
+    if (![
+      'ISNA',
+      'MWL',
+      'Egypt',
+      'Makkah',
+      'Karachi',
+      'Tehran',
+      'Jafari',
+    ].contains(preferences.calculationMethod)) {
       throw ValidationException.invalidFormat('Calculation method');
     }
 
-    if (!['Shafi', 'Hanafi', 'Maliki', 'Hanbali'].contains(preferences.madhab)) {
+    if (![
+      'Shafi',
+      'Hanafi',
+      'Maliki',
+      'Hanbali',
+    ].contains(preferences.madhab)) {
       throw ValidationException.invalidFormat('Madhab');
     }
   }
@@ -331,8 +396,15 @@ class UserService {
     }
 
     if (profile.gender != null && profile.gender!.isNotEmpty) {
-      if (!['male', 'female', 'other'].contains(profile.gender!.toLowerCase())) {
-        throw ValidationException.invalidFormat('Gender', expectedFormat: 'male, female, or other');
+      if (![
+        'male',
+        'female',
+        'other',
+      ].contains(profile.gender!.toLowerCase())) {
+        throw ValidationException.invalidFormat(
+          'Gender',
+          expectedFormat: 'male, female, or other',
+        );
       }
     }
   }
@@ -343,7 +415,7 @@ class UserService {
       final data = user.toJson();
       data['createdAt'] = FieldValue.serverTimestamp();
       data['updatedAt'] = FieldValue.serverTimestamp();
-      
+
       await _firestore.collection(_usersCollection).doc(user.id).set(data);
     } catch (e) {
       throw DatabaseException.fromFirestore(e);
@@ -352,10 +424,11 @@ class UserService {
 
   Future<UserModel?> _getUserFromFirestore(String userId) async {
     try {
-      final doc = await _firestore.collection(_usersCollection).doc(userId).get();
-      
+      final doc =
+          await _firestore.collection(_usersCollection).doc(userId).get();
+
       if (!doc.exists || doc.data() == null) return null;
-      
+
       return UserModel.fromJson(doc.data()!);
     } catch (e) {
       throw DatabaseException.fromFirestore(e);
@@ -367,7 +440,7 @@ class UserService {
       final data = user.toJson();
       data['updatedAt'] = FieldValue.serverTimestamp();
       data.remove('createdAt'); // Don't update creation time
-      
+
       await _firestore.collection(_usersCollection).doc(user.id).update(data);
     } catch (e) {
       throw DatabaseException.fromFirestore(e);
@@ -390,16 +463,63 @@ class UserService {
           .doc(userId)
           .snapshots()
           .map((snapshot) {
-        if (snapshot.exists && snapshot.data() != null) {
-          final user = UserModel.fromJson(snapshot.data()!);
-          // Update local storage in background
-          _localStorage.saveUser(user).catchError((e) => print('Failed to save user locally: $e'));
-          return user;
-        }
-        return null;
-      });
+            if (snapshot.exists && snapshot.data() != null) {
+              final user = UserModel.fromJson(snapshot.data()!);
+              // Update local storage in background
+              _localStorage
+                  .saveUser(user)
+                  .catchError((e) => print('Failed to save user locally: $e'));
+              return user;
+            }
+            return null;
+          });
     } catch (e) {
       throw DatabaseException.fromFirestore(e);
+    }
+  }
+
+  // Uploads a new profile image and returns the image URL
+  Future<String> updateProfileImage(String userId, File imageFile) async {
+    // TODO: Upload image to Firebase Storage, update Firestore, return URL
+    throw UnimplementedError('updateProfileImage is not yet implemented.');
+  }
+
+  // Deletes the user's profile image
+  Future<void> deleteProfileImage(String userId) async {
+    // TODO: Delete from Firebase Storage and clear Firestore reference
+    throw UnimplementedError('deleteProfileImage is not yet implemented.');
+  }
+
+  // Searches users by display name (you may need to create a Firestore index)
+  Future<List<UserModel>> searchUsersByDisplayName(String searchTerm) async {
+    try {
+      final query =
+          await _firestore
+              .collection(_usersCollection)
+              .where('displayName', isGreaterThanOrEqualTo: searchTerm)
+              .where('displayName', isLessThanOrEqualTo: '$searchTerm\uf8ff')
+              .get();
+
+      return query.docs.map((doc) => UserModel.fromJson(doc.data())).toList();
+    } catch (e) {
+      throw DatabaseException(
+        'Failed to search users: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
+  // Checks if a user exists in Firestore
+  Future<bool> userExists(String userId) async {
+    try {
+      final doc =
+          await _firestore.collection(_usersCollection).doc(userId).get();
+      return doc.exists;
+    } catch (e) {
+      throw DatabaseException(
+        'Failed to check user existence: ${e.toString()}',
+        originalError: e,
+      );
     }
   }
 }

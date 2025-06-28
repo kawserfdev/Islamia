@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:islamia/core/providers/auth_provider.dart';
 import 'package:islamia/data/models/user/user_model.dart';
 import 'package:islamia/data/models/user/user_profile.dart';
+import 'package:islamia/data/repositories/user_repositories.dart';
 import 'package:islamia/domain/repositories/user_repository.dart';
 
 // User profile controller provider
-// final userProfileControllerProvider =
-//     StateNotifierProvider<UserProfileController, UserProfileState>((ref) {
-//       return UserProfileController(ref.read(userRepositoryProvider));
-//     });
+final userProfileControllerProvider =
+    StateNotifierProvider<UserProfileController, UserProfileState>((ref) {
+      return UserProfileController(ref.read(userRepositoryProvider));
+    });
 
 // User profile state
 class UserProfileState {
@@ -38,11 +38,18 @@ class UserProfileState {
       isUpdating: isUpdating ?? this.isUpdating,
     );
   }
+
+  // 👇 Add these utility getters
+  bool get hasError => error != null;
+
+  bool get canRetry => !isLoading && !isUpdating;
 }
+
 
 // User profile controller
 class UserProfileController extends StateNotifier<UserProfileState> {
   final UserRepository _userRepository;
+  Future<void> Function()? _lastAction;
 
   UserProfileController(this._userRepository) : super(const UserProfileState());
 
@@ -132,6 +139,9 @@ class UserProfileController extends StateNotifier<UserProfileState> {
     } catch (e) {
       state = state.copyWith(isUpdating: false, error: e.toString());
     }
+  }
+   void retry() {
+    _lastAction?.call();
   }
 
   void clearError() {
