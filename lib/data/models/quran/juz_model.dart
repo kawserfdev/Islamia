@@ -1,41 +1,37 @@
-import 'package:islamia/data/models/quran/surah_range.dart';
+import 'package:json_annotation/json_annotation.dart';
 
-class Juz {
+part 'juz_model.g.dart';
+
+@JsonSerializable()
+class JuzModel {
   final int number;
   final String name;
-  final List<SurahRange> surahs;
-  final int startAyahNumber;
-  final int endAyahNumber;
-  final int totalAyahs;
+  final List<SurahInJuz> surahs;
 
-  const Juz({
+  const JuzModel({
     required this.number,
     required this.name,
     required this.surahs,
-    required this.startAyahNumber,
-    required this.endAyahNumber,
-    required this.totalAyahs,
   });
 
-  factory Juz.fromJson(Map<String, dynamic> json) {
-    return Juz(
-      number: json['number'],
-      name: json['name'],
-      surahs: (json['surahs'] as List).map((e) => SurahRange.fromJson(e)).toList(),
-      startAyahNumber: json['startAyahNumber'],
-      endAyahNumber: json['endAyahNumber'],
-      totalAyahs: json['totalAyahs'],
-    );
-  }
+  factory JuzModel.fromJson(Map<String, dynamic> json) => _$JuzModelFromJson(json);
+  Map<String, dynamic> toJson() => _$JuzModelToJson(this);
+}
 
-  Map<String, dynamic> toJson() {
-    return {
-      'number': number,
-      'name': name,
-      'surahs': surahs.map((e) => e.toJson()).toList(),
-      'startAyahNumber': startAyahNumber,
-      'endAyahNumber': endAyahNumber,
-      'totalAyahs': totalAyahs,
-    };
-  }
+@JsonSerializable()
+class SurahInJuz {
+  final int surahNumber;
+  final String surahName;
+  final int startVerse;
+  final int endVerse;
+
+  const SurahInJuz({
+    required this.surahNumber,
+    required this.surahName,
+    required this.startVerse,
+    required this.endVerse,
+  });
+
+  factory SurahInJuz.fromJson(Map<String, dynamic> json) => _$SurahInJuzFromJson(json);
+  Map<String, dynamic> toJson() => _$SurahInJuzToJson(this);
 }

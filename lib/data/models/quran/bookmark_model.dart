@@ -1,63 +1,57 @@
-class QuranBookmark {
+import 'package:json_annotation/json_annotation.dart';
+
+part 'bookmark_model.g.dart';
+
+@JsonSerializable()
+class BookmarkModel {
   final String id;
-  final String userId;
   final int surahNumber;
   final int ayahNumber;
   final String surahName;
   final String ayahText;
   final String? note;
-  final List<String> tags;
+  final String category;
   final DateTime createdAt;
-  final DateTime? updatedAt;
-  final bool isPrivate;
-  final int? colorCode;
+  final List<String> tags;
 
-  const QuranBookmark({
+  const BookmarkModel({
     required this.id,
-    required this.userId,
     required this.surahNumber,
     required this.ayahNumber,
     required this.surahName,
     required this.ayahText,
     this.note,
-    this.tags = const [],
+    this.category = 'General',
     required this.createdAt,
-    this.updatedAt,
-    this.isPrivate = true,
-    this.colorCode,
+    this.tags = const [],
   });
 
-  factory QuranBookmark.fromJson(Map<String, dynamic> json) {
-    return QuranBookmark(
-      id: json['id'],
-      userId: json['userId'],
-      surahNumber: json['surahNumber'],
-      ayahNumber: json['ayahNumber'],
-      surahName: json['surahName'],
-      ayahText: json['ayahText'],
-      note: json['note'],
-      tags: List<String>.from(json['tags'] ?? []),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-      isPrivate: json['isPrivate'] ?? true,
-      colorCode: json['colorCode'],
-    );
-  }
+  factory BookmarkModel.fromJson(Map<String, dynamic> json) => _$BookmarkModelFromJson(json);
+  Map<String, dynamic> toJson() => _$BookmarkModelToJson(this);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'userId': userId,
-      'surahNumber': surahNumber,
-      'ayahNumber': ayahNumber,
-      'surahName': surahName,
-      'ayahText': ayahText,
-      'note': note,
-      'tags': tags,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
-      'isPrivate': isPrivate,
-      'colorCode': colorCode,
-    };
+  String get displayText => '$surahName $ayahNumber:$surahNumber';
+
+  BookmarkModel copyWith({
+    String? id,
+    int? surahNumber,
+    int? ayahNumber,
+    String? surahName,
+    String? ayahText,
+    String? note,
+    String? category,
+    DateTime? createdAt,
+    List<String>? tags,
+  }) {
+    return BookmarkModel(
+      id: id ?? this.id,
+      surahNumber: surahNumber ?? this.surahNumber,
+      ayahNumber: ayahNumber ?? this.ayahNumber,
+      surahName: surahName ?? this.surahName,
+      ayahText: ayahText ?? this.ayahText,
+      note: note ?? this.note,
+      category: category ?? this.category,
+      createdAt: createdAt ?? this.createdAt,
+      tags: tags ?? this.tags,
+    );
   }
 }

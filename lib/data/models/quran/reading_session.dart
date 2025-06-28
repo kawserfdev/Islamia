@@ -1,61 +1,51 @@
-import 'package:islamia/data/models/quran/audio_recitation.dart';
+import 'package:json_annotation/json_annotation.dart';
 
-class ReadingSession {
+part 'reading_session.g.dart';
+
+@JsonSerializable()
+class ReadingSessionModel {
   final String id;
-  final String userId;
   final int surahNumber;
-  final int startAyah;
-  final int endAyah;
-  final Duration readingTime;
+  final int lastAyahRead;
   final DateTime startTime;
-  final DateTime endTime;
-  final ReadingMode mode;
-  final List<String> completedAyahs;
-  final Map<String, dynamic> metadata;
+  final DateTime lastReadTime;
+  @JsonKey(fromJson: _durationFromJson, toJson: _durationToJson)
+  final Duration totalReadingTime;
+  final int progressPercentage;
 
-  const ReadingSession({
+  const ReadingSessionModel({
     required this.id,
-    required this.userId,
     required this.surahNumber,
-    required this.startAyah,
-    required this.endAyah,
-    required this.readingTime,
+    required this.lastAyahRead,
     required this.startTime,
-    required this.endTime,
-    required this.mode,
-    this.completedAyahs = const [],
-    this.metadata = const {},
+    required this.lastReadTime,
+    required this.totalReadingTime,
+    required this.progressPercentage,
   });
 
-  factory ReadingSession.fromJson(Map<String, dynamic> json) {
-    return ReadingSession(
-      id: json['id'],
-      userId: json['userId'],
-      surahNumber: json['surahNumber'],
-      startAyah: json['startAyah'],
-      endAyah: json['endAyah'],
-      readingTime: Duration(milliseconds: json['readingTimeMs']),
-      startTime: DateTime.parse(json['startTime']),
-      endTime: DateTime.parse(json['endTime']),
-      mode: ReadingMode.values.firstWhere((e) => e.name == json['mode']),
-      completedAyahs: List<String>.from(json['completedAyahs'] ?? []),
-      metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
-    );
-  }
+  factory ReadingSessionModel.fromJson(Map<String, dynamic> json) => _$ReadingSessionModelFromJson(json);
+  Map<String, dynamic> toJson() => _$ReadingSessionModelToJson(this);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'userId': userId,
-      'surahNumber': surahNumber,
-      'startAyah': startAyah,
-      'endAyah': endAyah,
-      'readingTimeMs': readingTime.inMilliseconds,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
-      'mode': mode.name,
-      'completedAyahs': completedAyahs,
-      'metadata': metadata,
-    };
+  static Duration _durationFromJson(int milliseconds) => Duration(milliseconds: milliseconds);
+  static int _durationToJson(Duration duration) => duration.inMilliseconds;
+
+  ReadingSessionModel copyWith({
+    String? id,
+    int? surahNumber,
+    int? lastAyahRead,
+    DateTime? startTime,
+    DateTime? lastReadTime,
+    Duration? totalReadingTime,
+    int? progressPercentage,
+  }) {
+    return ReadingSessionModel(
+      id: id ?? this.id,
+      surahNumber: surahNumber ?? this.surahNumber,
+      lastAyahRead: lastAyahRead ?? this.lastAyahRead,
+      startTime: startTime ?? this.startTime,
+      lastReadTime: lastReadTime ?? this.lastReadTime,
+      totalReadingTime: totalReadingTime ?? this.totalReadingTime,
+      progressPercentage: progressPercentage ?? this.progressPercentage,
+    );
   }
 }
