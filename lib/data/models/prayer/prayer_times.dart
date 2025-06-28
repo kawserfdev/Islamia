@@ -1,16 +1,15 @@
 import 'package:json_annotation/json_annotation.dart';
 
 part 'prayer_times.g.dart';
+
 @JsonSerializable()
 class PrayerTimesModel {
-  final String date;
+  final DateInfo date;
   final PrayerTimings timings;
-  final IslamicDateInfo hijri;
 
   const PrayerTimesModel({
     required this.date,
     required this.timings,
-    required this.hijri,
   });
 
   factory PrayerTimesModel.fromJson(Map<String, dynamic> json) =>
@@ -18,6 +17,35 @@ class PrayerTimesModel {
 
   Map<String, dynamic> toJson() => _$PrayerTimesModelToJson(this);
 }
+
+@JsonSerializable()
+class DateInfo {
+  final GregorianDate gregorian;
+  final IslamicDateInfo hijri;
+
+  const DateInfo({
+    required this.gregorian,
+    required this.hijri,
+  });
+
+  factory DateInfo.fromJson(Map<String, dynamic> json) =>
+      _$DateInfoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DateInfoToJson(this);
+}
+
+@JsonSerializable()
+class GregorianDate {
+  final String date; 
+
+  const GregorianDate({required this.date});
+
+  factory GregorianDate.fromJson(Map<String, dynamic> json) =>
+      _$GregorianDateFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GregorianDateToJson(this);
+}
+
 
 @JsonSerializable()
 class PrayerTimings {

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/services/prayer/prayer_service.dart';
 import 'package:islamia/core/utils/app_utils.dart';
@@ -7,28 +9,36 @@ final prayerServiceProvider = Provider<PrayerService>((ref) {
   return PrayerService();
 });
 
-final prayerTimesProvider =
-    FutureProvider.family<PrayerTimesModel, LocationData>((
-      ref,
-      location,
-    ) async {
-      final service = ref.read(prayerServiceProvider);
-      return await service.getTodayPrayerTimes(
-        latitude: location.latitude,
-        longitude: location.longitude,
-      );
-    });
+final prayerTimesProvider = FutureProvider.family<
+  PrayerTimesModel,
+  LocationData
+>((ref, location) async {
+  try {
+    final service = ref.read(prayerServiceProvider);
+    final result = await service.getTodayPrayerTimes(
+      latitude: 23.8103,
+      longitude: 90.4125,
+    );
+    print("Got prayer time: ${jsonEncode(result)}");
+    return result;
+  } catch (e) {
+    print("Error getting prayer time: $e");
+    //print(stack);
+    rethrow;
+  }
+});
+
 
 final nextPrayerProvider = Provider<NextPrayerInfo>((ref) {
-  final prayerTimesAsync = ref.watch(
+  final prayerTimes = ref.watch(
     prayerTimesProvider(
       const LocationData(latitude: 23.8103, longitude: 90.4125),
     ),
   );
 
-  return prayerTimesAsync.when(
+  return prayerTimes.when(
     data: (prayerTimes) {
-      print("Nest Prayer Time : $prayerTimes");
+      print("Nest Prayer Time First UI: $prayerTimes");
       return PrayerUtils.getNextPrayer(prayerTimes.timings);
     },
     loading:

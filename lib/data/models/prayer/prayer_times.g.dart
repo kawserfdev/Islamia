@@ -8,17 +8,28 @@ part of 'prayer_times.dart';
 
 PrayerTimesModel _$PrayerTimesModelFromJson(Map<String, dynamic> json) =>
     PrayerTimesModel(
-      date: json['date'] as String,
+      date: DateInfo.fromJson(json['date'] as Map<String, dynamic>),
       timings: PrayerTimings.fromJson(json['timings'] as Map<String, dynamic>),
-      hijri: IslamicDateInfo.fromJson(json['hijri'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$PrayerTimesModelToJson(PrayerTimesModel instance) =>
-    <String, dynamic>{
-      'date': instance.date,
-      'timings': instance.timings,
-      'hijri': instance.hijri,
-    };
+    <String, dynamic>{'date': instance.date, 'timings': instance.timings};
+
+DateInfo _$DateInfoFromJson(Map<String, dynamic> json) => DateInfo(
+  gregorian: GregorianDate.fromJson(json['gregorian'] as Map<String, dynamic>),
+  hijri: IslamicDateInfo.fromJson(json['hijri'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$DateInfoToJson(DateInfo instance) => <String, dynamic>{
+  'gregorian': instance.gregorian,
+  'hijri': instance.hijri,
+};
+
+GregorianDate _$GregorianDateFromJson(Map<String, dynamic> json) =>
+    GregorianDate(date: json['date'] as String);
+
+Map<String, dynamic> _$GregorianDateToJson(GregorianDate instance) =>
+    <String, dynamic>{'date': instance.date};
 
 PrayerTimings _$PrayerTimingsFromJson(Map<String, dynamic> json) =>
     PrayerTimings(

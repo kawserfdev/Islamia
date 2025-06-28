@@ -11,6 +11,9 @@ class PrayerTimeCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nextPrayer = ref.watch(nextPrayerProvider);
+  //   final prayerTimes = ref.watch(
+  //   prayerTimesProvider(const LocationData(latitude: 23.8103, longitude: 90.4125)),
+  // );
     final currentTimeStream = ref.watch(currentTimeProvider);
 
     return Container(
