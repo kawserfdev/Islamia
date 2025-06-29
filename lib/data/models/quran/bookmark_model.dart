@@ -2,6 +2,8 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'bookmark_model.g.dart';
 
+
+
 @JsonSerializable()
 class BookmarkModel {
   final String id;

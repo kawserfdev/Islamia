@@ -67,6 +67,8 @@ dependencies:
   uuid: ^4.2.1
   crypto: ^3.0.3
   share_plus: ^11.0.0
+  flutter_staggered_animations: ^1.1.1
+  audioplayers: ^6.5.0
 
 dev_dependencies:
   flutter_test:

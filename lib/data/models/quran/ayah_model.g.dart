@@ -9,31 +9,25 @@ part of 'ayah_model.dart';
 AyahModel _$AyahModelFromJson(Map<String, dynamic> json) => AyahModel(
   number: (json['number'] as num).toInt(),
   text: json['text'] as String,
-  surah: (json['surah'] as num).toInt(),
-  numberInSurah: (json['numberInSurah'] as num).toInt(),
+  surahNumber: (json['surahNumber'] as num).toInt(),
+  ayahNumber: (json['ayahNumber'] as num).toInt(),
   juz: (json['juz'] as num).toInt(),
-  manzil: (json['manzil'] as num).toInt(),
   page: (json['page'] as num).toInt(),
-  ruku: (json['ruku'] as num).toInt(),
-  hizbQuarter: (json['hizbQuarter'] as num).toInt(),
-  sajda: json['sajda'] as bool? ?? false,
-  translations: (json['translations'] as Map<String, dynamic>?)?.map(
-    (k, e) => MapEntry(k, e as String),
-  ),
+  translations:
+      (json['translations'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ) ??
+      const {},
   audioUrl: json['audioUrl'] as String?,
 );
 
 Map<String, dynamic> _$AyahModelToJson(AyahModel instance) => <String, dynamic>{
   'number': instance.number,
   'text': instance.text,
-  'surah': instance.surah,
-  'numberInSurah': instance.numberInSurah,
+  'surahNumber': instance.surahNumber,
+  'ayahNumber': instance.ayahNumber,
   'juz': instance.juz,
-  'manzil': instance.manzil,
   'page': instance.page,
-  'ruku': instance.ruku,
-  'hizbQuarter': instance.hizbQuarter,
-  'sajda': instance.sajda,
   'translations': instance.translations,
   'audioUrl': instance.audioUrl,
 };
