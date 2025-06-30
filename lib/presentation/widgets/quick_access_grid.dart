@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:islamia/features/quran/pages/surah_list_page.dart';
 import '../../core/constants/app_constants.dart';
 
 class QuickAccessGrid extends StatelessWidget {
@@ -135,10 +136,14 @@ class QuickAccessGrid extends StatelessWidget {
   }
 
   void _navigateToQuran(BuildContext context) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Navigating to Quran...')))
+        .closed;
     // Navigate to Quran screen
-    ScaffoldMessenger.of(
+    Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Navigating to Quran...')));
+      MaterialPageRoute(builder: (context) => SurahListScreen()),
+    );
   }
 
   void _navigateToHadith(BuildContext context) {

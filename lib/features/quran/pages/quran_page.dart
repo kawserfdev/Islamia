@@ -1,26 +1,26 @@
-import 'package:flutter/material.dart';
-import 'package:islamia/features/quran/pages/surah_list_page.dart'; // Assuming surah_list_page.dart will be in the same directory
+// import 'package:flutter/material.dart';
+// import 'package:islamia/features/quran/pages/surah_list_page.dart'; 
 
-class QuranPage extends StatelessWidget {
-  const QuranPage({super.key});
+// class QuranPage extends StatelessWidget {
+//   const QuranPage({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quran'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SurahListScreen()),
-            );
-          },
-          child: const Text('View Surah List'),
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Quran'),
+//       ),
+//       body: Center(
+//         child: ElevatedButton(
+//           onPressed: () {
+//             Navigator.push(
+//               context,
+//               MaterialPageRoute(builder: (context) => const SurahListScreen()),
+//             );
+//           },
+//           child: const Text('View Surah List'),
+//         ),
+//       ),
+//     );
+//   }
+// }

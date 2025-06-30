@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/providers/quran/audio_provider.dart';
-import 'package:islamia/core/providers/quran/bookmark_provider.dart';
+import 'package:islamia/core/providers/quran/bookmark_provider.dart' hide surahAyahsProvider;
 import 'package:islamia/core/providers/quran/quran_provider.dart';
 import 'package:islamia/core/providers/quran/reading_history_provider.dart';
 import 'package:islamia/core/providers/quran/settings_provider.dart';
@@ -387,31 +387,31 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
 
   Future<void> _toggleBookmark(AyahModel ayah) async {
     final bookmarkId = '${widget.surah.number}_${ayah.numberInSurah}';
-    final isBookmarked = await ref.read(bookmarksProvider.notifier).isBookmarked(
-      widget.surah.number,
-      ayah.numberInSurah,
-    );
+    // final isBookmarked = await ref.read(bookmarksProvider.notifier).isBookmarked(
+    //   widget.surah.number,
+    //   ayah.numberInSurah,
+    // );
 
-    if (isBookmarked) {
-      await ref.read(bookmarksProvider.notifier).removeBookmark(bookmarkId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bookmark removed')),
-      );
-    } else {
-      final bookmark = BookmarkModel(
-        id: bookmarkId,
-        surahNumber: widget.surah.number,
-        ayahNumber: ayah.numberInSurah,
-        surahName: widget.surah.englishName,
-        ayahText: ayah.text,
-        createdAt: DateTime.now(),
-      );
+    // if (isBookmarked) {
+    //   await ref.read(bookmarksProvider.notifier).removeBookmark(bookmarkId);
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('Bookmark removed')),
+    //   );
+    // } else {
+    //   final bookmark = BookmarkModel(
+    //     id: bookmarkId,
+    //     surahNumber: widget.surah.number,
+    //     ayahNumber: ayah.numberInSurah,
+    //     surahName: widget.surah.englishName,
+    //     ayahText: ayah.text,
+    //     createdAt: DateTime.now(),
+    //   );
       
-      await ref.read(bookmarksProvider.notifier).addBookmark(bookmark);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bookmark added')),
-      );
-    }
+    //   await ref.read(bookmarksProvider.notifier).addBookmark(bookmark);
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('Bookmark added')),
+    //   );
+    // }
   }
 
   void _playAyah(AyahModel ayah) {

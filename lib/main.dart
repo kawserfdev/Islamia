@@ -124,7 +124,7 @@ import 'package:islamia/features/auth/login_page.dart';
 import 'package:islamia/features/auth/password_reset_screen.dart';
 import 'package:islamia/features/auth/phone_sign_in_screen.dart';
 import 'package:islamia/features/auth/sign_up_screen.dart';
-import 'package:islamia/features/home/presentation/pages/home_page.dart';
+import 'package:islamia/features/home/pages/home_page.dart';
 import 'package:islamia/features/profile/profile_screen.dart';
 import 'package:islamia/presentation/providers/theme_provider.dart';
 import 'core/config/firebase_config.dart';
@@ -222,6 +222,7 @@ class IslamiaApp extends ConsumerWidget {
         '/password-reset': (context) => const PasswordResetScreen(),
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
+        //'':(context)=> QuranReaderScreen(),
       },
       onGenerateRoute: (settings) {
         // Handle parameterized routes

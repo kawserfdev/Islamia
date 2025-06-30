@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/services/quran/settings_service.dart';
 
@@ -5,9 +6,13 @@ final quranSettingsServiceProvider = Provider<QuranSettingsService>((ref) {
   return QuranSettingsService();
 });
 
-final quranSettingsProvider = StateNotifierProvider<QuranSettingsNotifier, QuranSettings>((ref) {
-  return QuranSettingsNotifier(ref.read(quranSettingsServiceProvider));
+final quranSettingsProvider =
+    StateNotifierProvider<QuranSettingsNotifier, QuranSettings>((ref) {
+  final settingsService = ref.read(quranSettingsServiceProvider);
+  return QuranSettingsNotifier(settingsService);
 });
+
+
 
 class QuranSettings {
   final double arabicFontSize;
@@ -87,6 +92,10 @@ class QuranSettingsNotifier extends StateNotifier<QuranSettings> {
       highlightCurrentAyah: _settingsService.getHighlightCurrentAyah(),
     );
   }
+
+  Color getBackgroundColor(QuranSettings settings) =>
+    settings.nightMode ? Colors.black : Colors.white;
+
 
   Future<void> setArabicFontSize(double size) async {
     await _settingsService.setArabicFontSize(size);

@@ -482,6 +482,69 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// class BookmarksScreen extends ConsumerWidget {
+//   @override
+//   Widget build(BuildContext context, WidgetRef ref) {
+//     final bookmarkState = ref.watch(bookmarkNotifierProvider);
+//     final bookmarkNotifier = ref.read(bookmarkNotifierProvider.notifier);
+
+//     if (bookmarkState.isLoading) {
+//       return const Center(child: CircularProgressIndicator());
+//     }
+
+//     if (bookmarkState.hasError) {
+//       return Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Text('Error: ${bookmarkState.error}'),
+//             ElevatedButton(
+//               onPressed: () => bookmarkNotifier.refresh(),
+//               child: const Text('Retry'),
+//             ),
+//           ],
+//         ),
+//       );
+//     }
+
+//     return ListView.builder(
+//       itemCount: bookmarkState.bookmarks.length,
+//       itemBuilder: (context, index) {
+//         final bookmark = bookmarkState.bookmarks[index];
+//         return ListTile(
+//           title: Text('${bookmark.surahName} ${bookmark.ayahNumber}'),
+//           subtitle: Text(bookmark.ayahText),
+//           trailing: IconButton(
+//             icon: const Icon(Icons.delete),
+//             onPressed: () => bookmarkNotifier.removeBookmark(bookmark.id),
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
+
+
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/providers/quran/bookmarks_by_category_provider.dart';

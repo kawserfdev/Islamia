@@ -81,455 +81,548 @@
 //   }
 // }
 
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:islamia/core/services/quran/bookmark_service.dart';
-import 'package:islamia/core/services/quran/quran_api_service.dart';
-import 'package:islamia/core/services/quran/reading_history_service.dart';
-import 'package:islamia/core/services/quran/settings_service.dart';
-import 'package:islamia/data/models/quran/ayah_model.dart';
+import 'dart:convert';
+import 'package:islamia/core/providers/quran/bookmark_notifier.dart';
 import 'package:islamia/data/models/quran/bookmark_model.dart';
-import 'package:islamia/data/models/quran/surah_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// Service Providers
-final quranApiServiceProvider = Provider<QuranApiService>((ref) {
-  return QuranApiService();
-});
+class BookmarkService {
+  static const String _bookmarksKey = 'bookmarks';
+  static const String _bookmarkCounterKey = 'bookmark_counter';
 
-final bookmarkServiceProvider = Provider<BookmarkService>((ref) {
-  return BookmarkService();
-});
+  SharedPreferences? _prefs;
 
-final readingHistoryServiceProvider = Provider<ReadingHistoryService>((ref) {
-  return ReadingHistoryService();
-});
-
-final quranSettingsServiceProvider = Provider<QuranSettingsService>((ref) {
-  return QuranSettingsService();
-});
-
-// Initialization Provider
-final quranServicesInitializationProvider = FutureProvider<bool>((ref) async {
-  try {
-    debugPrint('Initializing Quran services...');
-    
-    // Initialize all services concurrently
-    await Future.wait([
-      ref.read(bookmarkServiceProvider).init(),
-      ref.read(readingHistoryServiceProvider).init(),
-      ref.read(quranSettingsServiceProvider).init(),
-    ]);
-
-    debugPrint('Quran services initialized successfully');
-    return true;
-  } catch (e) {
-    debugPrint('Failed to initialize Quran services: $e');
-    throw Exception('Failed to initialize Quran services: $e');
+  Future<void> init() async {
+    _prefs = await SharedPreferences.getInstance();
   }
-});
 
-// Surah Providers
-final surahListProvider = FutureProvider<List<SurahModel>>((ref) async {
-  // Ensure services are initialized
-  await ref.watch(quranServicesInitializationProvider.future);
   
-  final apiService = ref.read(quranApiServiceProvider);
-  try {
-    final surahs = await apiService.getAllSurahs();
-    debugPrint('Loaded ${surahs.length} surahs');
-    return surahs;
-  } catch (e) {
-    debugPrint('Failed to load Surahs: $e');
-    throw Exception('Failed to load Surahs: $e');
-  }
-});
-
-final surahByNumberProvider = Provider.family<SurahModel?, int>((ref, surahNumber) {
-  final surahListAsync = ref.watch(surahListProvider);
   
-  return surahListAsync.when(
-    data: (surahs) {
-      try {
-        return surahs.firstWhere((surah) => surah.number == surahNumber);
-      } catch (e) {
-        return null;
-      }
-    },
-    loading: () => null,
-    error: (_, __) => null,
-  );
-});
-
-// Ayah Providers
-final surahAyahsProvider = FutureProvider.family<List<AyahModel>, SurahAyahsParams>((ref, params) async {
-  // Ensure services are initialized
-  await ref.watch(quranServicesInitializationProvider.future);
-  
-  final apiService = ref.read(quranApiServiceProvider);
-  try {
-    debugPrint('Loading ayahs for Surah ${params.surahNumber} with translation ${params.translationEdition}');
-    
-    // Get Arabic text
-    final arabicAyahs = await apiService.getSurahAyahs(
-      params.surahNumber, 
-      edition: params.arabicEdition
-    );
-    
-    // Get translation if specified
-    List<AyahModel> translationAyahs = [];
-    if (params.translationEdition.isNotEmpty) {
-      try {
-        translationAyahs = await apiService.getSurahAyahs(
-          params.surahNumber, 
-          edition: params.translationEdition
-        );
-      } catch (e) {
-        debugPrint('Failed to load translation, continuing with Arabic only: $e');
-      }
-    }
-    
-    // Combine Arabic and translation
-    final combinedAyahs = <AyahModel>[];
-    for (int i = 0; i < arabicAyahs.length; i++) {
-      final arabicAyah = arabicAyahs[i];
+  // Get all bookmarks
+  Future<List<BookmarkModel>> getAllBookmarks() async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final bookmarksJson = prefs.getStringList(_bookmarksKey) ?? [];
       
-      Map<String, String> translations = {};
-      if (i < translationAyahs.length && params.translationEdition.isNotEmpty) {
-        translations[params.translationEdition] = translationAyahs[i].text;
+      final bookmarks = bookmarksJson
+          .map((json) => BookmarkModel.fromJson(jsonDecode(json)))
+          .toList();
+      
+      // Sort by creation date (newest first)
+      bookmarks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      return bookmarks;
+    } catch (e) {
+      throw Exception('Failed to load bookmarks: $e');
+    }
+  }
+
+  // Add a new bookmark
+  Future<BookmarkModel> addBookmark(BookmarkModel bookmark) async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      
+      // Check if bookmark already exists
+      final existingIndex = bookmarks.indexWhere(
+        (b) => b.surahNumber == bookmark.surahNumber && 
+               b.ayahNumber == bookmark.ayahNumber
+      );
+      
+      if (existingIndex != -1) {
+        throw Exception('Bookmark already exists for this ayah');
       }
       
-      final combinedAyah = arabicAyah.copyWith(translations: translations);
-      combinedAyahs.add(combinedAyah);
+      // Generate unique ID if not provided
+      final newBookmark = bookmark.id.isEmpty 
+          ? bookmark.copyWith(
+              id: await _generateBookmarkId(),
+              createdAt: DateTime.now(),
+            )
+          : bookmark;
+      
+      bookmarks.add(newBookmark);
+      await _saveBookmarks(bookmarks);
+      return newBookmark;
+    } catch (e) {
+      throw Exception('Failed to add bookmark: $e');
     }
-    
-    debugPrint('Successfully loaded ${combinedAyahs.length} ayahs for Surah ${params.surahNumber}');
-    return combinedAyahs;
-  } catch (e) {
-    debugPrint('Failed to load Surah Ayahs: $e');
-    throw Exception('Failed to load Surah Ayahs: $e');
-  }
-});
-
-final ayahWithTranslationsProvider = FutureProvider.family<AyahModel, AyahParams>((ref, params) async {
-  // Ensure services are initialized
-  await ref.watch(quranServicesInitializationProvider.future);
-  
-  final apiService = ref.read(quranApiServiceProvider);
-  try {
-    return await apiService.getAyahWithTranslations(
-      params.surahNumber,
-      params.ayahNumber,
-      editions: params.editions,
-    );
-  } catch (e) {
-    debugPrint('Failed to load Ayah with translations: $e');
-    throw Exception('Failed to load Ayah with translations: $e');
-  }
-});
-
-// Search Provider
-final searchResultsProvider = FutureProvider.family<List<AyahModel>, SearchParams>((ref, params) async {
-  if (params.query.isEmpty || params.query.length < 3) return [];
-  
-  // Ensure services are initialized
-  await ref.watch(quranServicesInitializationProvider.future);
-  
-  final apiService = ref.read(quranApiServiceProvider);
-  try {
-    debugPrint('Searching for: ${params.query}');
-    final results = await apiService.searchAyahs(
-      params.query,
-      edition: params.edition,
-      limit: params.limit,
-    );
-    debugPrint('Found ${results.length} search results');
-    return results;
-  } catch (e) {
-    debugPrint('Failed to search Ayahs: $e');
-    throw Exception('Failed to search Ayahs: $e');
-  }
-});
-
-// Juz Provider
-final juzAyahsProvider = FutureProvider.family<List<AyahModel>, JuzParams>((ref, params) async {
-  // Ensure services are initialized
-  await ref.watch(quranServicesInitializationProvider.future);
-  
-  final apiService = ref.read(quranApiServiceProvider);
-  try {
-    debugPrint('Loading Juz ${params.juzNumber}');
-    final ayahs = await apiService.getJuzAyahs(
-      params.juzNumber,
-      edition: params.edition,
-    );
-    debugPrint('Loaded ${ayahs.length} ayahs for Juz ${params.juzNumber}');
-    return ayahs;
-  } catch (e) {
-    debugPrint('Failed to load Juz Ayahs: $e');
-    throw Exception('Failed to load Juz Ayahs: $e');
-  }
-});
-
-// Bookmark Providers
-final bookmarksProvider = StateNotifierProvider<BookmarksNotifier, AsyncValue<List<BookmarkModel>>>(
-  (ref) => BookmarksNotifier(ref.read(bookmarkServiceProvider)),
-);
-
-final bookmarkCategoriesProvider = FutureProvider<List<String>>((ref) async {
-  // Ensure services are initialized
-  await ref.watch(quranServicesInitializationProvider.future);
-  
-  final bookmarkService = ref.read(bookmarkServiceProvider);
-  try {
-    return await bookmarkService.getAllCategories();
-  } catch (e) {
-    debugPrint('Failed to load bookmark categories: $e');
-    return ['General', 'Favorites', 'To Read', 'Important'];
-  }
-});
-
-final bookmarkStatsProvider = FutureProvider<BookmarkStats>((ref) async {
-  // Ensure services are initialized
-  await ref.watch(quranServicesInitializationProvider.future);
-  
-  final bookmarkService = ref.read(bookmarkServiceProvider);
-  try {
-    return await bookmarkService.getBookmarkStats();
-  } catch (e) {
-    debugPrint('Failed to load bookmark stats: $e');
-    throw Exception('Failed to load bookmark stats: $e');
-  }
-});
-
-final isBookmarkedProvider = FutureProvider.family<bool, AyahReference>((ref, ayahRef) async {
-  // Ensure services are initialized
-  await ref.watch(quranServicesInitializationProvider.future);
-  
-  final bookmarkService = ref.read(bookmarkServiceProvider);
-  try {
-    return await bookmarkService.isBookmarked(ayahRef.surahNumber, ayahRef.ayahNumber);
-  } catch (e) {
-    debugPrint('Failed to check bookmark status: $e');
-    return false;
-  }
-});
-
-// StateNotifier for Bookmarks
-class BookmarksNotifier extends StateNotifier<AsyncValue<List<BookmarkModel>>> {
-  final BookmarkService _bookmarkService;
-  
-  BookmarksNotifier(this._bookmarkService) : super(const AsyncValue.loading()) {
-    _loadBookmarks();
   }
 
-  Future<void> _loadBookmarks() async {
+  // Update a bookmark
+  Future<BookmarkModel> updateBookmark(BookmarkModel bookmark) async {
     try {
-      state = const AsyncValue.loading();
-      final bookmarks = await _bookmarkService.getAllBookmarks();
-      state = AsyncValue.data(bookmarks);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      final bookmarks = await getAllBookmarks();
+      final index = bookmarks.indexWhere((b) => b.id == bookmark.id);
+      
+      if (index == -1) {
+        throw Exception('Bookmark not found');
+      }
+      
+      bookmarks[index] = bookmark;
+      await _saveBookmarks(bookmarks);
+      return bookmark;
+    } catch (e) {
+      throw Exception('Failed to update bookmark: $e');
     }
   }
 
-  Future<void> addBookmark(BookmarkModel bookmark) async {
-    try {
-      await _bookmarkService.addBookmark(bookmark);
-      await _loadBookmarks(); // Refresh the list
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-    }
-  }
-
+  // Remove a bookmark
   Future<void> removeBookmark(String bookmarkId) async {
     try {
-      await _bookmarkService.removeBookmark(bookmarkId);
-      await _loadBookmarks(); // Refresh the list
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      final bookmarks = await getAllBookmarks();
+      final removed = bookmarks.removeWhere((bookmark) => bookmark.id == bookmarkId);
+      
+      // if (removed == 0) {
+      //   throw Exception('Bookmark not found');
+      // }
+      
+      await _saveBookmarks(bookmarks);
+    } catch (e) {
+      throw Exception('Failed to remove bookmark: $e');
     }
   }
 
-  Future<void> updateBookmark(BookmarkModel bookmark) async {
+  // Remove bookmark by surah and ayah
+  Future<void> removeBookmarkByAyah(int surahNumber, int ayahNumber) async {
     try {
-      await _bookmarkService.updateBookmark(bookmark);
-      await _loadBookmarks(); // Refresh the list
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      final bookmarks = await getAllBookmarks();
+      final removed = bookmarks.removeWhere(
+        (bookmark) => bookmark.surahNumber == surahNumber && 
+                     bookmark.ayahNumber == ayahNumber
+      );
+      
+      // if (removed == 0) {
+      //   throw Exception('No bookmark found for this ayah');
+      // }
+      
+      await _saveBookmarks(bookmarks);
+    } catch (e) {
+      throw Exception('Failed to remove bookmark by ayah: $e');
     }
   }
 
-  Future<bool> toggleBookmark(BookmarkModel bookmark) async {
-    try {
-      final result = await _bookmarkService.toggleBookmark(bookmark);
-      await _loadBookmarks(); // Refresh the list
-      return result;
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-      return false;
-    }
-  }
-
+  // Check if bookmark exists
   Future<bool> isBookmarked(int surahNumber, int ayahNumber) async {
     try {
-      return await _bookmarkService.isBookmarked(surahNumber, ayahNumber);
+      final bookmarks = await getAllBookmarks();
+      return bookmarks.any(
+        (bookmark) => bookmark.surahNumber == surahNumber && 
+                     bookmark.ayahNumber == ayahNumber
+      );
     } catch (e) {
       return false;
     }
   }
 
-  Future<void> refresh() async {
-    await _loadBookmarks();
+  // Get all unique categories
+  Future<List<String>> getAllCategories() async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      final categories = bookmarks
+          .map((bookmark) => bookmark.category)
+          .toSet()
+          .toList();
+      
+      // Add default categories if none exist
+      if (categories.isEmpty) {
+        categories.addAll([
+          'General',
+          'Favorites',
+          'To Read',
+          'Important',
+          'Memorization',
+          'Reflection',
+        ]);
+      }
+      
+      categories.sort();
+      return categories;
+    } catch (e) {
+      throw Exception('Failed to get all categories: $e');
+    }
   }
+
+  // Get all unique tags
+  Future<List<String>> getAllTags() async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      final tags = <String>{};
+      
+      for (final bookmark in bookmarks) {
+        tags.addAll(bookmark.tags);
+      }
+      
+      final sortedTags = tags.toList();
+      sortedTags.sort();
+      return sortedTags;
+    } catch (e) {
+      throw Exception('Failed to get all tags: $e');
+    }
+  }
+
+  // Export bookmarks to JSON
+  Future<String> exportBookmarks() async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      final exportData = {
+        'bookmarks': bookmarks.map((b) => b.toJson()).toList(),
+        'exported_at': DateTime.now().toIso8601String(),
+        'version': '1.0',
+        'app': 'Islamia',
+        'total_count': bookmarks.length,
+      };
+      return jsonEncode(exportData);
+    } catch (e) {
+      throw Exception('Failed to export bookmarks: $e');
+    }
+  }
+
+  // Import bookmarks from JSON
+  Future<ImportResult> importBookmarks(String jsonData, {bool overwrite = false}) async {
+    try {
+      final data = jsonDecode(jsonData) as Map<String, dynamic>;
+      final importedBookmarksData = data['bookmarks'] as List;
+      
+      final importedBookmarks = importedBookmarksData
+          .map((json) => BookmarkModel.fromJson(json))
+          .toList();
+      
+      if (overwrite) {
+        await _saveBookmarks(importedBookmarks);
+        return ImportResult(
+          success: true,
+          imported: importedBookmarks.length,
+          skipped: 0,
+          message: 'Successfully imported ${importedBookmarks.length} bookmarks',
+        );
+      } else {
+        final existingBookmarks = await getAllBookmarks();
+        int imported = 0;
+        int skipped = 0;
+        
+        for (final bookmark in importedBookmarks) {
+          final exists = existingBookmarks.any(
+            (b) => b.surahNumber == bookmark.surahNumber && 
+                   b.ayahNumber == bookmark.ayahNumber
+          );
+          
+          if (!exists) {
+            existingBookmarks.add(bookmark.copyWith(
+              id: await _generateBookmarkId(),
+              createdAt: DateTime.now(),
+            ));
+            imported++;
+          } else {
+            skipped++;
+          }
+        }
+        
+        await _saveBookmarks(existingBookmarks);
+        return ImportResult(
+          success: true,
+          imported: imported,
+          skipped: skipped,
+          message: 'Imported $imported bookmarks, skipped $skipped duplicates',
+        );
+      }
+    } catch (e) {
+      return ImportResult(
+        success: false,
+        imported: 0,
+        skipped: 0,
+        message: 'Failed to import bookmarks: $e',
+      );
+    }
+  }
+
+  // Get bookmark statistics
+  Future<BookmarkServiceStats> getBookmarkStats() async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      final categories = <String, int>{};
+      final surahs = <int>{};
+      final tagsCount = <String, int>{};
+      
+      for (final bookmark in bookmarks) {
+        // Count categories
+        categories[bookmark.category] = (categories[bookmark.category] ?? 0) + 1;
+        
+        // Count unique surahs
+        surahs.add(bookmark.surahNumber);
+        
+        // Count tags
+        for (final tag in bookmark.tags) {
+          tagsCount[tag] = (tagsCount[tag] ?? 0) + 1;
+        }
+      }
+      
+      // Find oldest and newest bookmarks
+      BookmarkModel? oldestBookmark;
+      BookmarkModel? newestBookmark;
+      
+      if (bookmarks.isNotEmpty) {
+        oldestBookmark = bookmarks.reduce(
+          (a, b) => a.createdAt.isBefore(b.createdAt) ? a : b
+        );
+        newestBookmark = bookmarks.reduce(
+          (a, b) => a.createdAt.isAfter(b.createdAt) ? a : b
+        );
+      }
+      
+      return BookmarkServiceStats(
+        totalBookmarks: bookmarks.length,
+        categoriesCount: categories.length,
+        surahsWithBookmarks: surahs.length,
+        categoryDistribution: categories,
+        tagDistribution: tagsCount,
+        oldestBookmark: oldestBookmark,
+        newestBookmark: newestBookmark,
+        averageBookmarksPerSurah: surahs.isNotEmpty ? bookmarks.length / surahs.length : 0.0,
+      );
+    } catch (e) {
+      throw Exception('Failed to get bookmark stats: $e');
+    }
+  }
+
+  // Get bookmarks by category
+  Future<List<BookmarkModel>> getBookmarksByCategory(String category) async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      return bookmarks.where((bookmark) => bookmark.category == category).toList();
+    } catch (e) {
+      throw Exception('Failed to get bookmarks by category: $e');
+    }
+  }
+
+  // Get bookmarks by surah
+  Future<List<BookmarkModel>> getBookmarksBySurah(int surahNumber) async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      final surahBookmarks = bookmarks
+          .where((bookmark) => bookmark.surahNumber == surahNumber)
+          .toList();
+      
+      // Sort by ayah number
+      surahBookmarks.sort((a, b) => a.ayahNumber.compareTo(b.ayahNumber));
+      
+      return surahBookmarks;
+    } catch (e) {
+      throw Exception('Failed to get bookmarks by surah: $e');
+    }
+  }
+
+  // Search bookmarks
+  Future<List<BookmarkModel>> searchBookmarks(String query) async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      final lowercaseQuery = query.toLowerCase();
+      
+      return bookmarks.where((bookmark) {
+        return bookmark.surahName.toLowerCase().contains(lowercaseQuery) ||
+               bookmark.ayahText.toLowerCase().contains(lowercaseQuery) ||
+               bookmark.note?.toLowerCase().contains(lowercaseQuery) == true ||
+               bookmark.tags.any((tag) => tag.toLowerCase().contains(lowercaseQuery));
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to search bookmarks: $e');
+    }
+  }
+
+  // Get recent bookmarks
+  Future<List<BookmarkModel>> getRecentBookmarks({int limit = 10}) async {
+    try {
+      final bookmarks = await getAllBookmarks();
+      return bookmarks.take(limit).toList(); // Already sorted by date
+    } catch (e) {
+      throw Exception('Failed to get recent bookmarks: $e');
+    }
+  }
+
+  // Toggle bookmark (add if doesn't exist, remove if exists)
+  Future<bool> toggleBookmark(BookmarkModel bookmark) async {
+    try {
+      final isBookmarked = await this.isBookmarked(
+        bookmark.surahNumber, 
+        bookmark.ayahNumber
+      );
+      
+      if (isBookmarked) {
+        await removeBookmarkByAyah(bookmark.surahNumber, bookmark.ayahNumber);
+        return false; // Removed
+      } else {
+        await addBookmark(bookmark);
+        return true; // Added
+      }
+    } catch (e) {
+      throw Exception('Failed to toggle bookmark: $e');
+    }
+  }
+
+  // Clear all bookmarks
+  Future<void> clearAllBookmarks() async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await prefs.remove(_bookmarksKey);
+      await prefs.remove(_bookmarkCounterKey);
+    } catch (e) {
+      throw Exception('Failed to clear bookmarks: $e');
+    }
+  }
+
+  // Private helper method to save bookmarks
+  Future<void> _saveBookmarks(List<BookmarkModel> bookmarks) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final bookmarksJson = bookmarks
+          .map((bookmark) => jsonEncode(bookmark.toJson()))
+          .toList();
+      
+      await prefs.setStringList(_bookmarksKey, bookmarksJson);
+    } catch (e) {
+      throw Exception('Failed to save bookmarks: $e');
+    }
+  }
+
+  // Generate unique bookmark ID
+  Future<String> _generateBookmarkId() async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      int counter = prefs.getInt(_bookmarkCounterKey) ?? 0;
+      counter++;
+      await prefs.setInt(_bookmarkCounterKey, counter);
+      return 'bookmark_${DateTime.now().millisecondsSinceEpoch}_$counter';
+    } catch (e) {
+      return 'bookmark_${DateTime.now().millisecondsSinceEpoch}';
+    }
+  }
+
+
+
+
+  
 }
 
-// Parameter Classes
-class SurahAyahsParams {
-  final int surahNumber;
-  final String arabicEdition;
-  final String translationEdition;
 
-  const SurahAyahsParams({
-    required this.surahNumber,
-    this.arabicEdition = 'ar.alafasy',
-    this.translationEdition = 'en.sahih',
+
+// class AyahReference {
+//   final int surahNumber;
+//   final int ayahNumber;
+//   const AyahReference({required this.surahNumber, required this.ayahNumber});
+
+//   @override
+//   bool operator ==(Object other) =>
+//       identical(this, other) ||
+//       other is AyahReference &&
+//           runtimeType == other.runtimeType &&
+//           surahNumber == other.surahNumber &&
+//           ayahNumber == other.ayahNumber;
+
+//   @override
+//   int get hashCode => Object.hash(surahNumber, ayahNumber);
+// }
+
+
+
+// Supporting classes for enhanced functionality
+// class BookmarkServiceStats {
+//   final int totalBookmarks;
+//   final int categoriesCount;
+//   final int surahsWithBookmarks;
+//   final Map<String, int> categoryDistribution;
+//   final Map<String, int> tagDistribution;
+//   final BookmarkModel? oldestBookmark;
+//   final BookmarkModel? newestBookmark;
+//   final double averageBookmarksPerSurah;
+
+//   BookmarkServiceStats({
+//     required this.totalBookmarks,
+//     required this.categoriesCount,
+//     required this.surahsWithBookmarks,
+//     required this.categoryDistribution,
+//     required this.tagDistribution,
+//     this.oldestBookmark,
+//     this.newestBookmark,
+//     required this.averageBookmarksPerSurah,
+//   });
+
+//   Duration? get bookmarkingDuration {
+//     if (oldestBookmark == null || newestBookmark == null) return null;
+//     return newestBookmark!.createdAt.difference(oldestBookmark!.createdAt);
+//   }
+
+//   String get mostUsedCategory {
+//     if (categoryDistribution.isEmpty) return 'None';
+//     return categoryDistribution.entries
+//         .reduce((a, b) => a.value > b.value ? a : b)
+//         .key;
+//   }
+
+//   String get mostUsedTag {
+//     if (tagDistribution.isEmpty) return 'None';
+//     return tagDistribution.entries
+//         .reduce((a, b) => a.value > b.value ? a : b)
+//         .key;
+//   }
+
+//   Map<String, dynamic> toJson() {
+//     return {
+//       'totalBookmarks': totalBookmarks,
+//       'categoriesCount': categoriesCount,
+//       'surahsWithBookmarks': surahsWithBookmarks,
+//       'categoryDistribution': categoryDistribution,
+//       'tagDistribution': tagDistribution,
+//       'averageBookmarksPerSurah': averageBookmarksPerSurah,
+//       'oldestBookmark': oldestBookmark?.toJson(),
+//       'newestBookmark': newestBookmark?.toJson(),
+//     };
+//   }
+
+//   factory BookmarkServiceStats.fromJson(Map<String, dynamic> json) {
+//     return BookmarkServiceStats(
+//       totalBookmarks: json['totalBookmarks'] ?? 0,
+//       categoriesCount: json['categoriesCount'] ?? 0,
+//       surahsWithBookmarks: json['surahsWithBookmarks'] ?? 0,
+//       categoryDistribution: Map<String, int>.from(json['categoryDistribution'] ?? {}),
+//       tagDistribution: Map<String, int>.from(json['tagDistribution'] ?? {}),
+//       averageBookmarksPerSurah: (json['averageBookmarksPerSurah'] ?? 0.0).toDouble(),
+//       oldestBookmark: json['oldestBookmark'] != null 
+//           ? BookmarkModel.fromJson(json['oldestBookmark'])
+//           : null,
+//       newestBookmark: json['newestBookmark'] != null 
+//           ? BookmarkModel.fromJson(json['newestBookmark'])
+//           : null,
+//     );
+//   }
+// }
+
+class ImportResult {
+  final bool success;
+  final int imported;
+  final int skipped;
+  final String message;
+
+  ImportResult({
+    required this.success,
+    required this.imported,
+    required this.skipped,
+    required this.message,
   });
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SurahAyahsParams &&
-          runtimeType == other.runtimeType &&
-          surahNumber == other.surahNumber &&
-          arabicEdition == other.arabicEdition &&
-          translationEdition == other.translationEdition;
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'imported': imported,
+      'skipped': skipped,
+      'message': message,
+    };
+  }
 
-  @override
-  int get hashCode => Object.hash(surahNumber, arabicEdition, translationEdition);
-}
-
-class AyahParams {
-  final int surahNumber;
-  final int ayahNumber;
-  final List<String> editions;
-
-  const AyahParams({
-    required this.surahNumber,
-    required this.ayahNumber,
-    this.editions = const ['ar.alafasy', 'en.sahih'],
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AyahParams &&
-          runtimeType == other.runtimeType &&
-          surahNumber == other.surahNumber &&
-          ayahNumber == other.ayahNumber &&
-          editions.toString() == other.editions.toString();
-
-  @override
-  int get hashCode => Object.hash(surahNumber, ayahNumber, editions.hashCode);
-}
-
-class SearchParams {
-  final String query;
-  final String edition;
-  final int limit;
-
-  const SearchParams({
-    required this.query,
-    this.edition = 'en.sahih',
-    this.limit = 20,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SearchParams &&
-          runtimeType == other.runtimeType &&
-          query == other.query &&
-          edition == other.edition &&
-          limit == other.limit;
-
-  @override
-  int get hashCode => Object.hash(query, edition, limit);
-}
-
-class JuzParams {
-  final int juzNumber;
-  final String edition;
-
-  const JuzParams({
-    required this.juzNumber,
-    this.edition = 'ar.alafasy',
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is JuzParams &&
-          runtimeType == other.runtimeType &&
-          juzNumber == other.juzNumber &&
-          edition == other.edition;
-
-  @override
-  int get hashCode => Object.hash(juzNumber, edition);
-}
-
-class AyahReference {
-  final int surahNumber;
-  final int ayahNumber;
-
-  const AyahReference({
-    required this.surahNumber,
-    required this.ayahNumber,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AyahReference &&
-          runtimeType == other.runtimeType &&
-          surahNumber == other.surahNumber &&
-          ayahNumber == other.ayahNumber;
-
-  @override
-  int get hashCode => Object.hash(surahNumber, ayahNumber);
-}
-
-// Utility Providers
-final quranStatsProvider = FutureProvider<QuranStats>((ref) async {
-  try {
-    final surahs = await ref.watch(surahListProvider.future);
-    final bookmarkStats = await ref.watch(bookmarkStatsProvider.future);
-    
-    return QuranStats(
-      totalSurahs: surahs.length,
-      totalAyahs: surahs.fold(0, (sum, surah) => sum + surah.numberOfAyahs),
-      bookmarkedAyahs: bookmarkStats.totalBookmarks,
-      categoriesUsed: bookmarkStats.categoriesCount,
+  factory ImportResult.fromJson(Map<String, dynamic> json) {
+    return ImportResult(
+      success: json['success'] ?? false,
+      imported: json['imported'] ?? 0,
+      skipped: json['skipped'] ?? 0,
+      message: json['message'] ?? '',
     );
-  } catch (e) {
-    throw Exception('Failed to calculate Quran stats: $e');
   }
-});
-
-class QuranStats {
-  final int totalSurahs;
-  final int totalAyahs;
-  final int bookmarkedAyahs;
-  final int categoriesUsed;
-
-  const QuranStats({
-    required this.totalSurahs,
-    required this.totalAyahs,
-    required this.bookmarkedAyahs,
-    required this.categoriesUsed,
-  });
-
-  double get bookmarkPercentage => 
-      totalAyahs > 0 ? (bookmarkedAyahs / totalAyahs) * 100 : 0.0;
 }
