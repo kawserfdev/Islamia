@@ -15,32 +15,18 @@ final quranSettingsProvider =
   final settingsService = ref.read(quranSettingsServiceProvider);
   final notifier = QuranSettingsNotifier(settingsService);
 
-  // Listen to the quranServicesInitializationProvider's state changes
   ref.listen<AsyncValue<bool>>(quranServicesInitializationProvider, (previous, next) {
     next.whenData((initializedSuccessfully) {
       if (initializedSuccessfully) {
-        // Call loadInitialSettings on the notifier.
-        // This is safe because loadInitialSettings is async and handles its own state update.
         notifier.loadInitialSettings();
       }
-      // No explicit error handling here for quranServicesInitializationProvider failure,
-      // as SplashScreen should prevent navigation, and settings would remain default.
     });
   });
 
-  // Also check the current state of the initialization provider when this provider is first built.
-  // This handles the case where quranServicesInitializationProvider completed *before*
-  // quranSettingsProvider was first watched/read.
   final currentInitState = ref.watch(quranServicesInitializationProvider);
   if (currentInitState.hasValue && currentInitState.value == true) {
-    // Using SchedulerBinding.instance.addPostFrameCallback to ensure that
-    // loadInitialSettings (which might update state) is called after the current build cycle.
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      // Check if the provider is still mounted before calling, as the widget
-      // that first triggered this provider might have been disposed.
-      if (ref.mounted) {
-        notifier.loadInitialSettings();
-      }
+      notifier.loadInitialSettings();
     });
   }
 
