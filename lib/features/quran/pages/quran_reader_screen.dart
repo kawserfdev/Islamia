@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/providers/quran/audio_provider.dart';
-import 'package:islamia/core/providers/quran/bookmark_provider.dart' hide surahAyahsProvider;
+import 'package:islamia/core/providers/quran/bookmark_provider.dart'
+    hide surahAyahsProvider;
 import 'package:islamia/core/providers/quran/quran_provider.dart';
 import 'package:islamia/core/providers/quran/reading_history_provider.dart';
 import 'package:islamia/core/providers/quran/settings_provider.dart';
@@ -16,11 +17,8 @@ class QuranReaderScreen extends ConsumerStatefulWidget {
   final SurahModel surah;
   final int? startFromAyah;
 
-  const QuranReaderScreen({
-    Key? key,
-    required this.surah,
-    this.startFromAyah,
-  }) : super(key: key);
+  const QuranReaderScreen({Key? key, required this.surah, this.startFromAyah})
+    : super(key: key);
 
   @override
   ConsumerState<QuranReaderScreen> createState() => _QuranReaderScreenState();
@@ -29,12 +27,12 @@ class QuranReaderScreen extends ConsumerStatefulWidget {
 class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   final ScrollController _scrollController = ScrollController();
   DateTime? _sessionStartTime;
-  
+
   @override
   void initState() {
     super.initState();
     _sessionStartTime = DateTime.now();
-    
+
     // Scroll to specific ayah if provided
     if (widget.startFromAyah != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,11 +51,13 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   void _updateReadingSession() {
     if (_sessionStartTime != null) {
       final sessionDuration = DateTime.now().difference(_sessionStartTime!);
-      ref.read(readingHistoryProvider.notifier).updateSession(
-        surahNumber: widget.surah.number,
-        lastAyahRead: 1, // You can track this more precisely
-        additionalTime: sessionDuration,
-      );
+      ref
+          .read(readingHistoryProvider.notifier)
+          .updateSession(
+            surahNumber: widget.surah.number,
+            lastAyahRead: 1, // You can track this more precisely
+            additionalTime: sessionDuration,
+          );
     }
   }
 
@@ -88,7 +88,8 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
             ),
           ],
         ),
-        backgroundColor: settings.nightMode ? Colors.grey[900] : Colors.green[700],
+        backgroundColor:
+            settings.nightMode ? Colors.grey[900] : Colors.green[700],
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -100,38 +101,39 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
             icon: const Icon(Icons.share),
           ),
           PopupMenuButton(
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'bookmarks',
-                child: Row(
-                  children: [
-                    Icon(Icons.bookmark),
-                    SizedBox(width: 8),
-                    Text('Bookmarks'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'search',
-                child: Row(
-                  children: [
-                    Icon(Icons.search),
-                    SizedBox(width: 8),
-                    Text('Search in Surah'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'info',
-                child: Row(
-                  children: [
-                    Icon(Icons.info),
-                    SizedBox(width: 8),
-                    Text('Surah Info'),
-                  ],
-                ),
-              ),
-            ],
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(
+                    value: 'bookmarks',
+                    child: Row(
+                      children: [
+                        Icon(Icons.bookmark),
+                        SizedBox(width: 8),
+                        Text('Bookmarks'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'search',
+                    child: Row(
+                      children: [
+                        Icon(Icons.search),
+                        SizedBox(width: 8),
+                        Text('Search in Surah'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'info',
+                    child: Row(
+                      children: [
+                        Icon(Icons.info),
+                        SizedBox(width: 8),
+                        Text('Surah Info'),
+                      ],
+                    ),
+                  ),
+                ],
             onSelected: (value) {
               switch (value) {
                 case 'bookmarks':
@@ -158,31 +160,35 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
       body: ayahsAsync.when(
         data: (ayahs) => _buildReaderContent(ayahs, settings),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: settings.nightMode ? Colors.red[300] : Colors.red,
+        error:
+            (error, stack) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: settings.nightMode ? Colors.red[300] : Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Failed to load Surah',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: settings.nightMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed:
+                        () => ref.refresh(
+                          surahAyahsProvider(widget.surah.number),
+                        ),
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load Surah',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: settings.nightMode ? Colors.white : Colors.black,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () => ref.refresh(surahAyahsProvider(widget.surah.number)),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+            ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _scrollToTop(),
@@ -200,18 +206,26 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     }
   }
 
-  Widget _buildSingleColumnLayout(List<AyahModel> ayahs, QuranSettings settings) {
+  Widget _buildSingleColumnLayout(
+    List<AyahModel> ayahs,
+    QuranSettings settings,
+  ) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
       itemCount: ayahs.length + 1, // +1 for Bismillah
       itemBuilder: (context, index) {
-        if (index == 0 && widget.surah.number != 1 && widget.surah.number != 9) {
+        if (index == 0 &&
+            widget.surah.number != 1 &&
+            widget.surah.number != 9) {
           // Bismillah (except for Al-Fatiha and At-Tawbah)
           return _buildBismillah(settings);
         }
 
-        final ayahIndex = widget.surah.number == 1 || widget.surah.number == 9 ? index : index - 1;
+        final ayahIndex =
+            widget.surah.number == 1 || widget.surah.number == 9
+                ? index
+                : index - 1;
         if (ayahIndex >= ayahs.length) return const SizedBox();
 
         final ayah = ayahs[ayahIndex];
@@ -266,7 +280,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                         child: Text(
                           '${ayah.numberInSurah}',
                           style: const TextStyle(
-                                                   color: Colors.white,
+                            color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -279,9 +293,9 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
             },
           ),
         ),
-        
+
         const VerticalDivider(width: 1),
-        
+
         // Translation Column
         Expanded(
           child: ListView.builder(
@@ -298,7 +312,10 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                       ayah.getTranslation(settings.selectedTranslation),
                       style: TextStyle(
                         fontSize: settings.translationFontSize,
-                        color: settings.nightMode ? Colors.grey[300] : Colors.grey[700],
+                        color:
+                            settings.nightMode
+                                ? Colors.grey[300]
+                                : Colors.grey[700],
                         height: 1.5,
                       ),
                     ),
@@ -315,17 +332,11 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                         ),
                         IconButton(
                           onPressed: () => _shareAyah(ayah),
-                          icon: const Icon(
-                            Icons.share,
-                            size: 20,
-                          ),
+                          icon: const Icon(Icons.share, size: 20),
                         ),
                         IconButton(
                           onPressed: () => _playAyah(ayah),
-                          icon: const Icon(
-                            Icons.play_arrow,
-                            size: 20,
-                          ),
+                          icon: const Icon(Icons.play_arrow, size: 20),
                         ),
                       ],
                     ),
@@ -346,10 +357,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
       decoration: BoxDecoration(
         color: settings.nightMode ? Colors.grey[800] : Colors.green[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.green[200]!,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.green[200]!, width: 1),
       ),
       child: Text(
         'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
@@ -379,7 +387,8 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   }
 
   void _shareAyah(AyahModel ayah) {
-    final text = '${ayah.text}\n\n'
+    final text =
+        '${ayah.text}\n\n'
         '${ayah.getTranslation(ref.read(quranSettingsProvider).selectedTranslation)}\n\n'
         '- ${widget.surah.englishName} ${ayah.numberInSurah}:${widget.surah.number}';
     Share.share(text);
@@ -406,7 +415,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     //     ayahText: ayah.text,
     //     createdAt: DateTime.now(),
     //   );
-      
+
     //   await ref.read(bookmarksProvider.notifier).addBookmark(bookmark);
     //   ScaffoldMessenger.of(context).showSnackBar(
     //     const SnackBar(content: Text('Bookmark added')),
@@ -416,13 +425,14 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
 
   void _playAyah(AyahModel ayah) {
     final reciter = ref.read(quranSettingsProvider).selectedReciter;
-    final audioUrl = 'https://api.alquran.cloud/v1/ayah/${ayah.number}/$reciter';
-    
-    ref.read(audioServiceProvider.notifier).playAyah(
-      audioUrl,
-      widget.surah.number,
-      ayah.numberInSurah,
-    );
+    final audioUrl =
+        'https://api.alquran.cloud/v1/ayah/${ayah.number}/$reciter';
+
+    print("Audio; $audioUrl");
+
+    ref
+        .read(audioServiceProvider.notifier)
+        .playAyah(audioUrl, widget.surah.number, ayah.numberInSurah);
   }
 
   void _scrollToTop() {
@@ -444,27 +454,28 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   void _showSurahInfo() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(widget.surah.englishName),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Arabic Name: ${widget.surah.name}'),
-            Text('Meaning: ${widget.surah.englishNameTranslation}'),
-            Text('Number of Ayahs: ${widget.surah.numberOfAyahs}'),
-            Text('Revelation: ${widget.surah.revelationType}'),
-            if (widget.surah.revelationOrder != null)
-              Text('Revelation Order: ${widget.surah.revelationOrder}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+      builder:
+          (context) => AlertDialog(
+            title: Text(widget.surah.englishName),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Arabic Name: ${widget.surah.name}'),
+                Text('Meaning: ${widget.surah.englishNameTranslation}'),
+                Text('Number of Ayahs: ${widget.surah.numberOfAyahs}'),
+                Text('Revelation: ${widget.surah.revelationType}'),
+                if (widget.surah.revelationOrder != null)
+                  Text('Revelation Order: ${widget.surah.revelationOrder}'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -488,7 +499,7 @@ class ReaderOptionsSheet extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 20),
-          
+
           // Arabic Font Size
           Row(
             children: [
@@ -504,7 +515,7 @@ class ReaderOptionsSheet extends ConsumerWidget {
             divisions: 26,
             onChanged: (value) => settingsNotifier.setArabicFontSize(value),
           ),
-          
+
           // Translation Font Size
           Row(
             children: [
@@ -518,28 +529,30 @@ class ReaderOptionsSheet extends ConsumerWidget {
             min: 12,
             max: 24,
             divisions: 12,
-            onChanged: (value) => settingsNotifier.setTranslationFontSize(value),
+            onChanged:
+                (value) => settingsNotifier.setTranslationFontSize(value),
           ),
-          
+
           // Night Mode Toggle
           SwitchListTile(
             title: const Text('Night Mode'),
             value: settings.nightMode,
             onChanged: (value) => settingsNotifier.setNightMode(value),
           ),
-          
+
           // Dual Column Layout
           SwitchListTile(
             title: const Text('Dual Column Layout'),
             value: settings.dualColumnLayout,
             onChanged: (value) => settingsNotifier.setDualColumnLayout(value),
           ),
-          
+
           // Show Transliteration
           SwitchListTile(
             title: const Text('Show Transliteration'),
             value: settings.showTransliteration,
-            onChanged: (value) => settingsNotifier.setShowTransliteration(value),
+            onChanged:
+                (value) => settingsNotifier.setShowTransliteration(value),
           ),
         ],
       ),
