@@ -1,17 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/services/quran/settings_service.dart';
+import 'package:islamia/core/services/quran/initialization_service.dart'; // Added
+import 'package:flutter/scheduler.dart'; // Added for WidgetsBinding / SchedulerBinding
 
 final quranSettingsServiceProvider = Provider<QuranSettingsService>((ref) {
+  // This service instance is created and its init() is called by quranServicesInitializationProvider.
+  // It's important that QuranSettingsService() itself doesn't do async work in constructor.
   return QuranSettingsService();
 });
 
 final quranSettingsProvider =
     StateNotifierProvider<QuranSettingsNotifier, QuranSettings>((ref) {
   final settingsService = ref.read(quranSettingsServiceProvider);
-  return QuranSettingsNotifier(settingsService);
-});
+  final notifier = QuranSettingsNotifier(settingsService);
 
+  ref.listen<AsyncValue<bool>>(quranServicesInitializationProvider, (previous, next) {
+    next.whenData((initializedSuccessfully) {
+      if (initializedSuccessfully) {
+        notifier.loadInitialSettings();
+      }
+    });
+  });
+
+  final currentInitState = ref.watch(quranServicesInitializationProvider);
+  if (currentInitState.hasValue && currentInitState.value == true) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifier.loadInitialSettings();
+    });
+  }
+
+  return notifier;
+});
 
 
 class QuranSettings {
@@ -72,25 +92,33 @@ class QuranSettings {
 
 class QuranSettingsNotifier extends StateNotifier<QuranSettings> {
   final QuranSettingsService _settingsService;
+  bool _initialSettingsLoaded = false;
 
-  QuranSettingsNotifier(this._settingsService) : super(const QuranSettings()) {
-    _loadSettings();
-  }
+  QuranSettingsNotifier(this._settingsService) : super(const QuranSettings());
+  // _loadSettings() call removed from constructor
 
-  void _loadSettings() {
-    state = QuranSettings(
-      arabicFontSize: _settingsService.getArabicFontSize(),
-      translationFontSize: _settingsService.getTranslationFontSize(),
-      selectedTranslation: _settingsService.getSelectedTranslation(),
-      showTransliteration: _settingsService.getShowTransliteration(),
-      nightMode: _settingsService.getNightMode(),
-      showTafsir: _settingsService.getShowTafsir(),
-      fontFamily: _settingsService.getFontFamily(),
-      dualColumnLayout: _settingsService.getDualColumnLayout(),
-      selectedReciter: _settingsService.getSelectedReciter(),
-      autoScroll: _settingsService.getAutoScroll(),
-      highlightCurrentAyah: _settingsService.getHighlightCurrentAyah(),
-    );
+  Future<void> loadInitialSettings() async {
+    if (_initialSettingsLoaded) return; // Guard to prevent multiple loads
+
+    try {
+      // This is the logic from the original _loadSettings
+      state = QuranSettings(
+        arabicFontSize: _settingsService.getArabicFontSize(),
+        translationFontSize: _settingsService.getTranslationFontSize(),
+        selectedTranslation: _settingsService.getSelectedTranslation(),
+        showTransliteration: _settingsService.getShowTransliteration(),
+        nightMode: _settingsService.getNightMode(),
+        showTafsir: _settingsService.getShowTafsir(),
+        fontFamily: _settingsService.getFontFamily(),
+        dualColumnLayout: _settingsService.getDualColumnLayout(),
+        selectedReciter: _settingsService.getSelectedReciter(),
+        autoScroll: _settingsService.getAutoScroll(),
+        highlightCurrentAyah: _settingsService.getHighlightCurrentAyah(),
+      );
+      _initialSettingsLoaded = true; // Mark as loaded
+    } catch (e) {
+      print("Error in QuranSettingsNotifier.loadInitialSettings: $e");
+    }
   }
 
   Color getBackgroundColor(QuranSettings settings) =>
@@ -144,8 +172,6 @@ class QuranSettingsNotifier extends StateNotifier<QuranSettings> {
 
   Future<void> setAutoScroll(bool enabled) async {
     await _settingsService.setAutoScroll(enabled);
-
-    await _settingsService.setAutoScroll(enabled);
     state = state.copyWith(autoScroll: enabled);
   }
 
@@ -156,12 +182,14 @@ class QuranSettingsNotifier extends StateNotifier<QuranSettings> {
 
   Future<void> resetToDefaults() async {
     await _settingsService.resetToDefaults();
-    state = const QuranSettings();
+    _initialSettingsLoaded = false; // Allow re-load
+    await loadInitialSettings(); // Reload to ensure state matches service defaults
   }
 
   Future<void> importSettings(Map<String, dynamic> settings) async {
     await _settingsService.importSettings(settings);
-    _loadSettings();
+    _initialSettingsLoaded = false; // Reset flag to allow reloading fresh data
+    await loadInitialSettings(); // This will read all settings from the service again
   }
 
   Map<String, dynamic> exportSettings() {
