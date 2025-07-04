@@ -422,7 +422,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     //   );
     // }
   }
-
+/
   void _playAyah(AyahModel ayah) {
     final reciter = ref.read(quranSettingsProvider).selectedReciter;
     final audioUrl =

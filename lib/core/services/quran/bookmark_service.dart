@@ -4,13 +4,13 @@
 
 // class BookmarkService {
 //   static const String _bookmarksKey = 'bookmarks';
-  
+
 //   // Get all bookmarks
 //   Future<List<BookmarkModel>> getAllBookmarks() async {
 //     try {
 //       final prefs = await SharedPreferences.getInstance();
 //       final bookmarksJson = prefs.getStringList(_bookmarksKey) ?? [];
-      
+
 //       return bookmarksJson
 //           .map((json) => BookmarkModel.fromJson(jsonDecode(json)))
 //           .toList();
@@ -36,11 +36,11 @@
 //     try {
 //       final bookmarks = await getAllBookmarks();
 //       final index = bookmarks.indexWhere((b) => b.id == bookmark.id);
-      
+
 //       if (index == -1) {
 //         throw Exception('Bookmark not found');
 //       }
-      
+
 //       bookmarks[index] = bookmark;
 //       await _saveBookmarks(bookmarks);
 //       return bookmark;
@@ -76,7 +76,7 @@
 //     final bookmarksJson = bookmarks
 //         .map((bookmark) => jsonEncode(bookmark.toJson()))
 //         .toList();
-    
+
 //     await prefs.setStringList(_bookmarksKey, bookmarksJson);
 //   }
 // }
@@ -96,21 +96,20 @@ class BookmarkService {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  
-  
   // Get all bookmarks
   Future<List<BookmarkModel>> getAllBookmarks() async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       final bookmarksJson = prefs.getStringList(_bookmarksKey) ?? [];
-      
-      final bookmarks = bookmarksJson
-          .map((json) => BookmarkModel.fromJson(jsonDecode(json)))
-          .toList();
-      
+
+      final bookmarks =
+          bookmarksJson
+              .map((json) => BookmarkModel.fromJson(jsonDecode(json)))
+              .toList();
+
       // Sort by creation date (newest first)
       bookmarks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       return bookmarks;
     } catch (e) {
       throw Exception('Failed to load bookmarks: $e');
@@ -121,25 +120,27 @@ class BookmarkService {
   Future<BookmarkModel> addBookmark(BookmarkModel bookmark) async {
     try {
       final bookmarks = await getAllBookmarks();
-      
+
       // Check if bookmark already exists
       final existingIndex = bookmarks.indexWhere(
-        (b) => b.surahNumber == bookmark.surahNumber && 
-               b.ayahNumber == bookmark.ayahNumber
+        (b) =>
+            b.surahNumber == bookmark.surahNumber &&
+            b.ayahNumber == bookmark.ayahNumber,
       );
-      
+
       if (existingIndex != -1) {
         throw Exception('Bookmark already exists for this ayah');
       }
-      
+
       // Generate unique ID if not provided
-      final newBookmark = bookmark.id.isEmpty 
-          ? bookmark.copyWith(
-              id: await _generateBookmarkId(),
-              createdAt: DateTime.now(),
-            )
-          : bookmark;
-      
+      final newBookmark =
+          bookmark.id.isEmpty
+              ? bookmark.copyWith(
+                id: await _generateBookmarkId(),
+                createdAt: DateTime.now(),
+              )
+              : bookmark;
+
       bookmarks.add(newBookmark);
       await _saveBookmarks(bookmarks);
       return newBookmark;
@@ -153,11 +154,11 @@ class BookmarkService {
     try {
       final bookmarks = await getAllBookmarks();
       final index = bookmarks.indexWhere((b) => b.id == bookmark.id);
-      
+
       if (index == -1) {
         throw Exception('Bookmark not found');
       }
-      
+
       bookmarks[index] = bookmark;
       await _saveBookmarks(bookmarks);
       return bookmark;
@@ -170,12 +171,14 @@ class BookmarkService {
   Future<void> removeBookmark(String bookmarkId) async {
     try {
       final bookmarks = await getAllBookmarks();
-      final removed = bookmarks.removeWhere((bookmark) => bookmark.id == bookmarkId);
-      
+      final removed = bookmarks.removeWhere(
+        (bookmark) => bookmark.id == bookmarkId,
+      );
+
       // if (removed == 0) {
       //   throw Exception('Bookmark not found');
       // }
-      
+
       await _saveBookmarks(bookmarks);
     } catch (e) {
       throw Exception('Failed to remove bookmark: $e');
@@ -187,14 +190,15 @@ class BookmarkService {
     try {
       final bookmarks = await getAllBookmarks();
       final removed = bookmarks.removeWhere(
-        (bookmark) => bookmark.surahNumber == surahNumber && 
-                     bookmark.ayahNumber == ayahNumber
+        (bookmark) =>
+            bookmark.surahNumber == surahNumber &&
+            bookmark.ayahNumber == ayahNumber,
       );
-      
+
       // if (removed == 0) {
       //   throw Exception('No bookmark found for this ayah');
       // }
-      
+
       await _saveBookmarks(bookmarks);
     } catch (e) {
       throw Exception('Failed to remove bookmark by ayah: $e');
@@ -206,8 +210,9 @@ class BookmarkService {
     try {
       final bookmarks = await getAllBookmarks();
       return bookmarks.any(
-        (bookmark) => bookmark.surahNumber == surahNumber && 
-                     bookmark.ayahNumber == ayahNumber
+        (bookmark) =>
+            bookmark.surahNumber == surahNumber &&
+            bookmark.ayahNumber == ayahNumber,
       );
     } catch (e) {
       return false;
@@ -218,11 +223,9 @@ class BookmarkService {
   Future<List<String>> getAllCategories() async {
     try {
       final bookmarks = await getAllBookmarks();
-      final categories = bookmarks
-          .map((bookmark) => bookmark.category)
-          .toSet()
-          .toList();
-      
+      final categories =
+          bookmarks.map((bookmark) => bookmark.category).toSet().toList();
+
       // Add default categories if none exist
       if (categories.isEmpty) {
         categories.addAll([
@@ -234,7 +237,7 @@ class BookmarkService {
           'Reflection',
         ]);
       }
-      
+
       categories.sort();
       return categories;
     } catch (e) {
@@ -247,11 +250,11 @@ class BookmarkService {
     try {
       final bookmarks = await getAllBookmarks();
       final tags = <String>{};
-      
+
       for (final bookmark in bookmarks) {
         tags.addAll(bookmark.tags);
       }
-      
+
       final sortedTags = tags.toList();
       sortedTags.sort();
       return sortedTags;
@@ -278,45 +281,53 @@ class BookmarkService {
   }
 
   // Import bookmarks from JSON
-  Future<ImportResult> importBookmarks(String jsonData, {bool overwrite = false}) async {
+  Future<ImportResult> importBookmarks(
+    String jsonData, {
+    bool overwrite = false,
+  }) async {
     try {
       final data = jsonDecode(jsonData) as Map<String, dynamic>;
       final importedBookmarksData = data['bookmarks'] as List;
-      
-      final importedBookmarks = importedBookmarksData
-          .map((json) => BookmarkModel.fromJson(json))
-          .toList();
-      
+
+      final importedBookmarks =
+          importedBookmarksData
+              .map((json) => BookmarkModel.fromJson(json))
+              .toList();
+
       if (overwrite) {
         await _saveBookmarks(importedBookmarks);
         return ImportResult(
           success: true,
           imported: importedBookmarks.length,
           skipped: 0,
-          message: 'Successfully imported ${importedBookmarks.length} bookmarks',
+          message:
+              'Successfully imported ${importedBookmarks.length} bookmarks',
         );
       } else {
         final existingBookmarks = await getAllBookmarks();
         int imported = 0;
         int skipped = 0;
-        
+
         for (final bookmark in importedBookmarks) {
           final exists = existingBookmarks.any(
-            (b) => b.surahNumber == bookmark.surahNumber && 
-                   b.ayahNumber == bookmark.ayahNumber
+            (b) =>
+                b.surahNumber == bookmark.surahNumber &&
+                b.ayahNumber == bookmark.ayahNumber,
           );
-          
+
           if (!exists) {
-            existingBookmarks.add(bookmark.copyWith(
-              id: await _generateBookmarkId(),
-              createdAt: DateTime.now(),
-            ));
+            existingBookmarks.add(
+              bookmark.copyWith(
+                id: await _generateBookmarkId(),
+                createdAt: DateTime.now(),
+              ),
+            );
             imported++;
           } else {
             skipped++;
           }
         }
-        
+
         await _saveBookmarks(existingBookmarks);
         return ImportResult(
           success: true,
@@ -342,33 +353,34 @@ class BookmarkService {
       final categories = <String, int>{};
       final surahs = <int>{};
       final tagsCount = <String, int>{};
-      
+
       for (final bookmark in bookmarks) {
         // Count categories
-        categories[bookmark.category] = (categories[bookmark.category] ?? 0) + 1;
-        
+        categories[bookmark.category] =
+            (categories[bookmark.category] ?? 0) + 1;
+
         // Count unique surahs
         surahs.add(bookmark.surahNumber);
-        
+
         // Count tags
         for (final tag in bookmark.tags) {
           tagsCount[tag] = (tagsCount[tag] ?? 0) + 1;
         }
       }
-      
+
       // Find oldest and newest bookmarks
       BookmarkModel? oldestBookmark;
       BookmarkModel? newestBookmark;
-      
+
       if (bookmarks.isNotEmpty) {
         oldestBookmark = bookmarks.reduce(
-          (a, b) => a.createdAt.isBefore(b.createdAt) ? a : b
+          (a, b) => a.createdAt.isBefore(b.createdAt) ? a : b,
         );
         newestBookmark = bookmarks.reduce(
-          (a, b) => a.createdAt.isAfter(b.createdAt) ? a : b
+          (a, b) => a.createdAt.isAfter(b.createdAt) ? a : b,
         );
       }
-      
+
       return BookmarkServiceStats(
         totalBookmarks: bookmarks.length,
         categoriesCount: categories.length,
@@ -377,7 +389,8 @@ class BookmarkService {
         tagDistribution: tagsCount,
         oldestBookmark: oldestBookmark,
         newestBookmark: newestBookmark,
-        averageBookmarksPerSurah: surahs.isNotEmpty ? bookmarks.length / surahs.length : 0.0,
+        averageBookmarksPerSurah:
+            surahs.isNotEmpty ? bookmarks.length / surahs.length : 0.0,
       );
     } catch (e) {
       throw Exception('Failed to get bookmark stats: $e');
@@ -388,7 +401,9 @@ class BookmarkService {
   Future<List<BookmarkModel>> getBookmarksByCategory(String category) async {
     try {
       final bookmarks = await getAllBookmarks();
-      return bookmarks.where((bookmark) => bookmark.category == category).toList();
+      return bookmarks
+          .where((bookmark) => bookmark.category == category)
+          .toList();
     } catch (e) {
       throw Exception('Failed to get bookmarks by category: $e');
     }
@@ -398,13 +413,14 @@ class BookmarkService {
   Future<List<BookmarkModel>> getBookmarksBySurah(int surahNumber) async {
     try {
       final bookmarks = await getAllBookmarks();
-      final surahBookmarks = bookmarks
-          .where((bookmark) => bookmark.surahNumber == surahNumber)
-          .toList();
-      
+      final surahBookmarks =
+          bookmarks
+              .where((bookmark) => bookmark.surahNumber == surahNumber)
+              .toList();
+
       // Sort by ayah number
       surahBookmarks.sort((a, b) => a.ayahNumber.compareTo(b.ayahNumber));
-      
+
       return surahBookmarks;
     } catch (e) {
       throw Exception('Failed to get bookmarks by surah: $e');
@@ -416,12 +432,14 @@ class BookmarkService {
     try {
       final bookmarks = await getAllBookmarks();
       final lowercaseQuery = query.toLowerCase();
-      
+
       return bookmarks.where((bookmark) {
         return bookmark.surahName.toLowerCase().contains(lowercaseQuery) ||
-               bookmark.ayahText.toLowerCase().contains(lowercaseQuery) ||
-               bookmark.note?.toLowerCase().contains(lowercaseQuery) == true ||
-               bookmark.tags.any((tag) => tag.toLowerCase().contains(lowercaseQuery));
+            bookmark.ayahText.toLowerCase().contains(lowercaseQuery) ||
+            bookmark.note?.toLowerCase().contains(lowercaseQuery) == true ||
+            bookmark.tags.any(
+              (tag) => tag.toLowerCase().contains(lowercaseQuery),
+            );
       }).toList();
     } catch (e) {
       throw Exception('Failed to search bookmarks: $e');
@@ -442,10 +460,10 @@ class BookmarkService {
   Future<bool> toggleBookmark(BookmarkModel bookmark) async {
     try {
       final isBookmarked = await this.isBookmarked(
-        bookmark.surahNumber, 
-        bookmark.ayahNumber
+        bookmark.surahNumber,
+        bookmark.ayahNumber,
       );
-      
+
       if (isBookmarked) {
         await removeBookmarkByAyah(bookmark.surahNumber, bookmark.ayahNumber);
         return false; // Removed
@@ -473,10 +491,9 @@ class BookmarkService {
   Future<void> _saveBookmarks(List<BookmarkModel> bookmarks) async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final bookmarksJson = bookmarks
-          .map((bookmark) => jsonEncode(bookmark.toJson()))
-          .toList();
-      
+      final bookmarksJson =
+          bookmarks.map((bookmark) => jsonEncode(bookmark.toJson())).toList();
+
       await prefs.setStringList(_bookmarksKey, bookmarksJson);
     } catch (e) {
       throw Exception('Failed to save bookmarks: $e');
@@ -495,14 +512,7 @@ class BookmarkService {
       return 'bookmark_${DateTime.now().millisecondsSinceEpoch}';
     }
   }
-
-
-
-
-  
 }
-
-
 
 // class AyahReference {
 //   final int surahNumber;
@@ -520,8 +530,6 @@ class BookmarkService {
 //   @override
 //   int get hashCode => Object.hash(surahNumber, ayahNumber);
 // }
-
-
 
 // Supporting classes for enhanced functionality
 // class BookmarkServiceStats {
@@ -585,10 +593,10 @@ class BookmarkService {
 //       categoryDistribution: Map<String, int>.from(json['categoryDistribution'] ?? {}),
 //       tagDistribution: Map<String, int>.from(json['tagDistribution'] ?? {}),
 //       averageBookmarksPerSurah: (json['averageBookmarksPerSurah'] ?? 0.0).toDouble(),
-//       oldestBookmark: json['oldestBookmark'] != null 
+//       oldestBookmark: json['oldestBookmark'] != null
 //           ? BookmarkModel.fromJson(json['oldestBookmark'])
 //           : null,
-//       newestBookmark: json['newestBookmark'] != null 
+//       newestBookmark: json['newestBookmark'] != null
 //           ? BookmarkModel.fromJson(json['newestBookmark'])
 //           : null,
 //     );
