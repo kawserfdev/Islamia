@@ -6,10 +6,10 @@ import 'package:islamia/core/providers/quran/audio_provider.dart';
 import 'package:islamia/core/providers/quran/bookmark_provider.dart';
 import 'package:islamia/core/providers/quran/settings_provider.dart';
 import 'package:islamia/core/services/quran/parameter_classes.dart';
-import 'package:islamia/data/models/quran/ayah_audio_model.dart';
 import 'package:islamia/data/models/quran/ayah_model.dart';
 import 'package:islamia/data/models/quran/bookmark_model.dart';
 import 'package:islamia/data/models/quran/juz_model.dart';
+import 'package:islamia/data/models/quran/surah_model.dart';
 import 'package:islamia/features/quran/pages/ayah_search_delegate.dart';
 import 'package:islamia/features/quran/widgets/bookmarks_sheet.dart';
 import '../widgets/ayah_widget.dart';
@@ -17,7 +17,7 @@ import '../widgets/audio_player_widget.dart';
 import 'settings_screen.dart';
 
 class QuranReaderScreen extends ConsumerStatefulWidget {
-  final Surah? surah;
+  final SurahModel? surah;
   final JuzModel? juz;
   final String title;
   final int? initialAyah;
@@ -43,7 +43,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.initialAyah != null) {
-        _scrollToAyah(widget.initialAyah!);
+        _scrollToAyah(widget.initialAyah??0);
       }
     });
   }
@@ -63,7 +63,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
         widget.surah != null
             ? ref.watch(
               surahAyahsProvider(
-                SurahAyahsParams(surahNumber: widget.surah!.number!),
+                SurahAyahsParams(surahNumber: widget.surah!.number),
               ),
             )
             : ref.watch(juzAyahsProvider(widget.juz!.number));
@@ -89,7 +89,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
           audioState.isInitialized
               ? AudioPlayerWidget(
                 surahNumber: widget.surah?.number ?? 0,
-                totalAyahs: widget.surah!.numberOfAyahs??0,
+                totalAyahs: widget.surah!.numberOfAyahs,
               )
               : const SizedBox.shrink(),
           // audioPlayerAsync.when(
@@ -126,7 +126,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                               ref.refresh(
                                 surahAyahsProvider(
                                   SurahAyahsParams(
-                                    surahNumber: widget.surah!.number!,
+                                    surahNumber: widget.surah!.number,
                                   ),
                                 ),
                               );

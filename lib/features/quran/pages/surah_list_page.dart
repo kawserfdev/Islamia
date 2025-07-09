@@ -407,7 +407,7 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => QuranReaderScreen(title: surah.name),
+        builder: (context) => QuranReaderScreen(title: surah.name, surah: surah),
       ),
     );
   }
