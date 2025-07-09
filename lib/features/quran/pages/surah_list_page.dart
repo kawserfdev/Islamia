@@ -6,6 +6,7 @@ import 'package:islamia/core/providers/quran/reading_history_provider.dart';
 import 'package:islamia/core/providers/quran/settings_provider.dart';
 import 'package:islamia/data/models/quran/surah_model.dart';
 import 'package:islamia/features/quran/pages/bookmarks_screen.dart';
+import 'package:islamia/features/quran/pages/juz_list_screen.dart';
 import 'package:islamia/features/quran/pages/search_screen.dart';
 import 'package:islamia/features/quran/pages/settings_screen.dart';
 import '../widgets/surah_tile.dart';
@@ -45,57 +46,71 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
       backgroundColor: settings.nightMode ? Colors.black : Colors.white,
       appBar: AppBar(
         title: const Text('Holy Quran'),
-        backgroundColor: settings.nightMode ? Colors.grey[900] : Colors.green[700],
+        backgroundColor:
+            settings.nightMode ? Colors.grey[900] : Colors.green[700],
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SearchScreen()),
-            ),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SearchScreen()),
+                ),
             icon: const Icon(Icons.search),
           ),
           IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => QuranBookmarksScreen()),
-            ),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QuranBookmarksScreen(),
+                  ),
+                ),
             icon: const Icon(Icons.bookmark),
           ),
           PopupMenuButton(
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'settings',
-                child: const Row(
-                  children: [
-                    Icon(Icons.settings),
-                    SizedBox(width: 8),
-                    Text('Settings'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'night_mode',
-                child: Row(
-                  children: [
-                    Icon(settings.nightMode ? Icons.light_mode : Icons.dark_mode),
-                    const SizedBox(width: 8),
-                    Text(settings.nightMode ? 'Light Mode' : 'Night Mode'),
-                  ],
-                ),
-              ),
-            ],
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem(
+                    value: 'settings',
+                    child: const Row(
+                      children: [
+                        Icon(Icons.settings),
+                        SizedBox(width: 8),
+                        Text('Settings'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'night_mode',
+                    child: Row(
+                      children: [
+                        Icon(
+                          settings.nightMode
+                              ? Icons.light_mode
+                              : Icons.dark_mode,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(settings.nightMode ? 'Light Mode' : 'Night Mode'),
+                      ],
+                    ),
+                  ),
+                ],
             onSelected: (value) {
               switch (value) {
                 case 'settings':
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const QuranSettingsScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const QuranSettingsScreen(),
+                    ),
                   );
                   break;
                 case 'night_mode':
-                  ref.read(quranSettingsProvider.notifier).setNightMode(!settings.nightMode);
+                  ref
+                      .read(quranSettingsProvider.notifier)
+                      .setNightMode(!settings.nightMode);
                   break;
               }
             },
@@ -136,11 +151,14 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
               ),
             ),
           ),
-          
+
           // Content
           Expanded(
             child: TabBarView(
@@ -149,37 +167,45 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
                 // Surahs Tab
                 surahListAsync.when(
                   data: (surahs) => _buildSurahList(surahs, settings),
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) => Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: settings.nightMode ? Colors.red[300] : Colors.red,
+                  loading:
+                      () => const Center(child: CircularProgressIndicator()),
+                  error:
+                      (error, stack) => Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color:
+                                  settings.nightMode
+                                      ? Colors.red[300]
+                                      : Colors.red,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load Surahs',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color:
+                                    settings.nightMode
+                                        ? Colors.white
+                                        : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () => ref.refresh(surahListProvider),
+                              child: const Text('Retry'),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Failed to load Surahs',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: settings.nightMode ? Colors.white : Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () => ref.refresh(surahListProvider),
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
                 ),
-                
+
                 // Juz Tab
                 _buildJuzList(settings),
-                
+
                 // Recent Tab
                 _buildRecentReadings(settings),
               ],
@@ -191,13 +217,23 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
   }
 
   Widget _buildSurahList(List<SurahModel> surahs, QuranSettings settings) {
-    final filteredSurahs = _searchQuery.isEmpty
-        ? surahs
-        : surahs.where((surah) =>
-            surah.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            surah.englishName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            surah.englishNameTranslation.toLowerCase().contains(_searchQuery.toLowerCase()),
-          ).toList();
+    final filteredSurahs =
+        _searchQuery.isEmpty
+            ? surahs
+            : surahs
+                .where(
+                  (surah) =>
+                      surah.name.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ||
+                      surah.englishName.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ||
+                      surah.englishNameTranslation.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ),
+                )
+                .toList();
 
     return AnimationLimiter(
       child: ListView.builder(
@@ -270,10 +306,14 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
               size: 16,
             ),
             onTap: () {
-              // Navigate to Juz reader
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Opening Juz $juzNumber')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => JuzListScreen()),
               );
+              // Navigate to Juz reader
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Opening Juz $juzNumber')));
             },
           ),
         );
@@ -283,7 +323,7 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
 
   Widget _buildRecentReadings(QuranSettings settings) {
     final recentSessionsAsync = ref.watch(recentSessionsProvider(10));
-    
+
     return recentSessionsAsync.when(
       data: (sessions) {
         if (sessions.isEmpty) {
@@ -294,21 +334,28 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
                 Icon(
                   Icons.history,
                   size: 64,
-                  color: settings.nightMode ? Colors.grey[600] : Colors.grey[400],
+                  color:
+                      settings.nightMode ? Colors.grey[600] : Colors.grey[400],
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No recent readings',
                   style: TextStyle(
                     fontSize: 18,
-                    color: settings.nightMode ? Colors.grey[400] : Colors.grey[600],
+                    color:
+                        settings.nightMode
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Start reading to see your history here',
                   style: TextStyle(
-                    color: settings.nightMode ? Colors.grey[500] : Colors.grey[500],
+                    color:
+                        settings.nightMode
+                            ? Colors.grey[500]
+                            : Colors.grey[500],
                   ),
                 ),
               ],
@@ -355,22 +402,25 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
                     Text(
                       'Last read: Ayah ${session.lastAyahRead}',
                       style: TextStyle(
-                        color: settings.nightMode ? Colors.grey[400] : Colors.grey[600],
+                        color:
+                            settings.nightMode
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
                       ),
                     ),
                     Text(
                       'Reading time: ${_formatDuration(session.totalReadingTime)}',
                       style: TextStyle(
-                        color: settings.nightMode ? Colors.grey[400] : Colors.grey[600],
+                        color:
+                            settings.nightMode
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
                         fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-                trailing: Icon(
-                  Icons.play_arrow,
-                  color: Colors.green[700],
-                ),
+                trailing: Icon(Icons.play_arrow, color: Colors.green[700]),
                 onTap: () {
                   // Navigate to continue reading
                   // _navigateToReaderWithPosition(session.surahNumber, session.lastAyahRead);
@@ -381,21 +431,22 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Text(
-          'Failed to load recent readings',
-          style: TextStyle(
-            color: settings.nightMode ? Colors.red[300] : Colors.red,
+      error:
+          (error, stack) => Center(
+            child: Text(
+              'Failed to load recent readings',
+              style: TextStyle(
+                color: settings.nightMode ? Colors.red[300] : Colors.red,
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
-    
+
     if (hours > 0) {
       return '${hours}h ${minutes}m';
     } else {
@@ -407,7 +458,8 @@ class _SurahListScreenState extends ConsumerState<SurahListScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => QuranReaderScreen(title: surah.name, surah: surah),
+        builder:
+            (context) => QuranReaderScreen(title: surah.name, surah: surah),
       ),
     );
   }

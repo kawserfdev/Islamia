@@ -178,6 +178,7 @@ class JuzListScreen extends ConsumerWidget {
         builder: (context) => QuranReaderScreen(
           juz: juz,
           title: juz.name,
+         // surah: juz.surahs,
         ),
       ),
     );
