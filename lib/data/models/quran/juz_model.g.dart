@@ -13,12 +13,18 @@ JuzModel _$JuzModelFromJson(Map<String, dynamic> json) => JuzModel(
       (json['surahs'] as List<dynamic>)
           .map((e) => SurahInJuz.fromJson(e as Map<String, dynamic>))
           .toList(),
+  startAyahNumber: (json['startAyahNumber'] as num).toInt(),
+  endAyahNumber: (json['endAyahNumber'] as num).toInt(),
+  totalAyahs: (json['totalAyahs'] as num).toInt(),
 );
 
 Map<String, dynamic> _$JuzModelToJson(JuzModel instance) => <String, dynamic>{
   'number': instance.number,
   'name': instance.name,
   'surahs': instance.surahs,
+  'startAyahNumber': instance.startAyahNumber,
+  'endAyahNumber': instance.endAyahNumber,
+  'totalAyahs': instance.totalAyahs,
 };
 
 SurahInJuz _$SurahInJuzFromJson(Map<String, dynamic> json) => SurahInJuz(

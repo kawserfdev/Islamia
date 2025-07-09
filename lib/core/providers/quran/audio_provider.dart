@@ -1,12 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:islamia/core/providers/quran/audio_player_sate.dart';
 import 'package:islamia/core/providers/quran/quran_provider.dart';
 import 'package:islamia/core/services/quran/audio_service.dart';
 import 'package:islamia/data/models/quran/reciter_model.dart';
 
 final audioServiceProvider =
     StateNotifierProvider<AudioService, AudioPlayerState>((ref) {
-      return AudioService();
-    });
+  return AudioService();
+});
 
 final reciterListProvider = FutureProvider<List<ReciterModel>>((ref) async {
   final apiService = ref.read(quranApiServiceProvider);

@@ -455,6 +455,12 @@ class BookmarkNotifier extends StateNotifier<BookmarkState> {
     await loadBookmarks();
   }
 
+  bool isBookmarked(BookmarkModel ayah) {
+  return state.bookmarks.any((b) =>
+      b.surahNumber == ayah.surahNumber &&
+      b.ayahNumber == ayah.ayahNumber);
+}
+
   // Load all bookmarks
   Future<void> loadBookmarks() async {
     try {

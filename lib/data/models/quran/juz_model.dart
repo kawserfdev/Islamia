@@ -7,17 +7,22 @@ class JuzModel {
   final int number;
   final String name;
   final List<SurahInJuz> surahs;
+  final int startAyahNumber;
+  final int endAyahNumber;
+  final int totalAyahs;
 
   const JuzModel({
     required this.number,
     required this.name,
     required this.surahs,
+    required this.startAyahNumber,
+    required this.endAyahNumber,
+    required this.totalAyahs,
   });
 
   factory JuzModel.fromJson(Map<String, dynamic> json) => _$JuzModelFromJson(json);
   Map<String, dynamic> toJson() => _$JuzModelToJson(this);
 }
-
 @JsonSerializable()
 class SurahInJuz {
   final int surahNumber;

@@ -199,7 +199,7 @@ final juzAyahsProvider = FutureProvider.family<List<AyahModel>, JuzParams>((ref,
   }
 });
 
-// Bookmark Providers
+//Bookmark Providers
 // final bookmarksProvider = StateNotifierProvider<BookmarksNotifier, AsyncValue<List<BookmarkModel>>>(
 //   (ref) => BookmarksNotifier(ref.read(bookmarkServiceProvider)),
 // );

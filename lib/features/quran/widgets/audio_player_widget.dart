@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:islamia/core/providers/quran/audio_player_sate.dart';
 import 'package:islamia/core/providers/quran/audio_provider.dart';
 import 'package:islamia/core/services/quran/audio_service.dart';
 
