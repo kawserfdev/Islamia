@@ -1,132 +1,132 @@
-import 'package:json_annotation/json_annotation.dart';
+// import 'package:json_annotation/json_annotation.dart';
 
-part 'prayer_times.g.dart';
+// part 'prayer_times.g.dart';
 
-@JsonSerializable()
-class PrayerTimesModel {
-  final DateInfo date;
-  final PrayerTimings timings;
+// @JsonSerializable()
+// class PrayerTimesModel {
+//   final DateInfo date;
+//   final PrayerTimings timings;
 
-  const PrayerTimesModel({
-    required this.date,
-    required this.timings,
-  });
+//   const PrayerTimesModel({
+//     required this.date,
+//     required this.timings,
+//   });
 
-  factory PrayerTimesModel.fromJson(Map<String, dynamic> json) =>
-      _$PrayerTimesModelFromJson(json);
+//   factory PrayerTimesModel.fromJson(Map<String, dynamic> json) =>
+//       _$PrayerTimesModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$PrayerTimesModelToJson(this);
-}
+//   Map<String, dynamic> toJson() => _$PrayerTimesModelToJson(this);
+// }
 
-@JsonSerializable()
-class DateInfo {
-  final GregorianDate gregorian;
-  final IslamicDateInfo hijri;
+// @JsonSerializable()
+// class DateInfo {
+//   final GregorianDate gregorian;
+//   final IslamicDateInfo hijri;
 
-  const DateInfo({
-    required this.gregorian,
-    required this.hijri,
-  });
+//   const DateInfo({
+//     required this.gregorian,
+//     required this.hijri,
+//   });
 
-  factory DateInfo.fromJson(Map<String, dynamic> json) =>
-      _$DateInfoFromJson(json);
+//   factory DateInfo.fromJson(Map<String, dynamic> json) =>
+//       _$DateInfoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$DateInfoToJson(this);
-}
+//   Map<String, dynamic> toJson() => _$DateInfoToJson(this);
+// }
 
-@JsonSerializable()
-class GregorianDate {
-  final String date; 
+// @JsonSerializable()
+// class GregorianDate {
+//   final String date; 
 
-  const GregorianDate({required this.date});
+//   const GregorianDate({required this.date});
 
-  factory GregorianDate.fromJson(Map<String, dynamic> json) =>
-      _$GregorianDateFromJson(json);
+//   factory GregorianDate.fromJson(Map<String, dynamic> json) =>
+//       _$GregorianDateFromJson(json);
 
-  Map<String, dynamic> toJson() => _$GregorianDateToJson(this);
-}
+//   Map<String, dynamic> toJson() => _$GregorianDateToJson(this);
+// }
 
 
-@JsonSerializable()
-class PrayerTimings {
-  @JsonKey(name: 'Fajr')
-  final String fajr;
-  @JsonKey(name: 'Sunrise')
-  final String sunrise;
-  @JsonKey(name: 'Dhuhr')
-  final String dhuhr;
-  @JsonKey(name: 'Asr')
-  final String asr;
-  @JsonKey(name: 'Maghrib')
-  final String maghrib;
-  @JsonKey(name: 'Isha')
-  final String isha;
+// @JsonSerializable()
+// class PrayerTimings {
+//   @JsonKey(name: 'Fajr')
+//   final String fajr;
+//   @JsonKey(name: 'Sunrise')
+//   final String sunrise;
+//   @JsonKey(name: 'Dhuhr')
+//   final String dhuhr;
+//   @JsonKey(name: 'Asr')
+//   final String asr;
+//   @JsonKey(name: 'Maghrib')
+//   final String maghrib;
+//   @JsonKey(name: 'Isha')
+//   final String isha;
 
-  const PrayerTimings({
-    required this.fajr,
-    required this.sunrise,
-    required this.dhuhr,
-    required this.asr,
-    required this.maghrib,
-    required this.isha,
-  });
+//   const PrayerTimings({
+//     required this.fajr,
+//     required this.sunrise,
+//     required this.dhuhr,
+//     required this.asr,
+//     required this.maghrib,
+//     required this.isha,
+//   });
 
-  factory PrayerTimings.fromJson(Map<String, dynamic> json) =>
-      _$PrayerTimingsFromJson(json);
+//   factory PrayerTimings.fromJson(Map<String, dynamic> json) =>
+//       _$PrayerTimingsFromJson(json);
 
-  Map<String, dynamic> toJson() => _$PrayerTimingsToJson(this);
+//   Map<String, dynamic> toJson() => _$PrayerTimingsToJson(this);
 
-  List<PrayerTime> get prayersList => [
-    PrayerTime('Fajr', fajr),
-    PrayerTime('Sunrise', sunrise),
-    PrayerTime('Dhuhr', dhuhr),
-    PrayerTime('Asr', asr),
-    PrayerTime('Maghrib', maghrib),
-    PrayerTime('Isha', isha),
-  ];
-}
+//   List<PrayerTime> get prayersList => [
+//     PrayerTime('Fajr', fajr),
+//     PrayerTime('Sunrise', sunrise),
+//     PrayerTime('Dhuhr', dhuhr),
+//     PrayerTime('Asr', asr),
+//     PrayerTime('Maghrib', maghrib),
+//     PrayerTime('Isha', isha),
+//   ];
+// }
 
-class PrayerTime {
-  final String name;
-  final String time;
+// class PrayerTime {
+//   final String name;
+//   final String time;
 
-  const PrayerTime(this.name, this.time);
-}
+//   const PrayerTime(this.name, this.time);
+// }
 
-@JsonSerializable()
-class IslamicDateInfo {
-  final String date;
-  final String day;
-  final String month;
-  final String year;
-  final IslamicMonth islamicMonth;
+// @JsonSerializable()
+// class IslamicDateInfo {
+//   final String date;
+//   final String day;
+//   final String month;
+//   final String year;
+//   final IslamicMonth islamicMonth;
 
-  const IslamicDateInfo({
-    required this.date,
-    required this.day,
-    required this.month,
-    required this.year,
-    required this.islamicMonth,
-  });
+//   const IslamicDateInfo({
+//     required this.date,
+//     required this.day,
+//     required this.month,
+//     required this.year,
+//     required this.islamicMonth,
+//   });
 
-  factory IslamicDateInfo.fromJson(Map<String, dynamic> json) =>
-      _$IslamicDateInfoFromJson(json);
+//   factory IslamicDateInfo.fromJson(Map<String, dynamic> json) =>
+//       _$IslamicDateInfoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$IslamicDateInfoToJson(this);
-}
+//   Map<String, dynamic> toJson() => _$IslamicDateInfoToJson(this);
+// }
 
-@JsonSerializable()
-class IslamicMonth {
-  final String en;
-  final String ar;
+// @JsonSerializable()
+// class IslamicMonth {
+//   final String en;
+//   final String ar;
 
-  const IslamicMonth({
-    required this.en,
-    required this.ar,
-  });
+//   const IslamicMonth({
+//     required this.en,
+//     required this.ar,
+//   });
 
-  factory IslamicMonth.fromJson(Map<String, dynamic> json) =>
-      _$IslamicMonthFromJson(json);
+//   factory IslamicMonth.fromJson(Map<String, dynamic> json) =>
+//       _$IslamicMonthFromJson(json);
 
-  Map<String, dynamic> toJson() => _$IslamicMonthToJson(this);
-}
+//   Map<String, dynamic> toJson() => _$IslamicMonthToJson(this);
+// }

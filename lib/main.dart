@@ -2,7 +2,7 @@
 // import 'package:firebase_core/firebase_core.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:islamia/core/constants/themes.dart';
-// import 'package:islamia/core/providers/theme_provider.dart'; 
+// import 'package:islamia/core/providers/theme_provider.dart';
 // import 'package:islamia/features/home/presentation/pages/home_page.dart';
 // import 'package:islamia/firebase_options.dart';
 
@@ -36,8 +36,6 @@
 //   }
 // }
 
-
-
 // // void configLoading({
 // //   required bool isDarkMode,
 // //   required Color indicatorColor,
@@ -57,11 +55,6 @@
 // //     ..userInteractions = false
 // //     ..dismissOnTap = false;
 // // }
- 
-
-
-
-
 
 //  import 'package:flutter/material.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -73,18 +66,18 @@
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
-  
+
 //   try {
 //     // Initialize Firebase
 
 //     await FirebaseConfig.initialize();
-    
+
 //     // Initialize local storage
 //     await LocalStorageService().prefs;
-    
+
 //     // Initialize SQLite database for app data
 //     await DatabaseHelper().database;
-    
+
 //     runApp(const ProviderScope(child: IslamiaApp()));
 //   } catch (e) {
 //     print('App initialization error: $e');
@@ -117,6 +110,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/constants/themes.dart';
+import 'package:islamia/core/services/hadith/hadith_notification_service.dart';
+import 'package:islamia/core/services/location_service.dart';
+import 'package:islamia/core/services/prayer/prayer_notification_service.dart';
 import 'package:islamia/core/services/storage/local_storage_service.dart';
 import 'package:islamia/features/auth/complete_profile_screen.dart';
 import 'package:islamia/features/auth/email_verification_screen.dart';
@@ -130,26 +126,41 @@ import 'package:islamia/presentation/providers/theme_provider.dart';
 import 'core/config/firebase_config.dart';
 import 'core/database/database_helper.dart';
 import 'presentation/screens/splash_screen.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   try {
     // Initialize Firebase
     await FirebaseConfig.initialize();
-    
+
     // Initialize local storage
     await LocalStorageService().prefs;
-    
+
     // Initialize SQLite database for app data (Quran, Hadith, etc.)
     await DatabaseHelper().database;
-    
+
+    // Initialize notification service
+    await HadithNotificationService().initialize();
+    await HadithNotificationService().requestPermissions();
+    // Initialize timezone data
+    tz.initializeTimeZones();
+
+    // Initialize notification service
+    await PrayerNotificationService().initialize();
+    await PrayerNotificationService().requestPermissions();
+
+    // Request location permissions
+    final locationService = LocationService();
+    await locationService.requestLocationPermission();
+
     runApp(const ProviderScope(child: IslamiaApp()));
   } catch (e) {
     print('App initialization error: $e');
@@ -164,18 +175,11 @@ void main() async {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   const Text(
                     'Failed to Initialize App',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
@@ -200,6 +204,7 @@ void main() async {
     );
   }
 }
+
 class IslamiaApp extends ConsumerWidget {
   const IslamiaApp({Key? key}) : super(key: key);
 
@@ -229,10 +234,11 @@ class IslamiaApp extends ConsumerWidget {
         if (settings.name == '/password-reset') {
           final args = settings.arguments as Map<String, dynamic>?;
           return MaterialPageRoute(
-            builder: (context) => PasswordResetScreen(
-              email: args?['email'],
-              oobCode: args?['oobCode'],
-            ),
+            builder:
+                (context) => PasswordResetScreen(
+                  email: args?['email'],
+                  oobCode: args?['oobCode'],
+                ),
           );
         }
         return null;
