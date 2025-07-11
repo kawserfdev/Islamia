@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:islamia/core/constants/app_constants.dart';
 import 'package:islamia/core/services/api/api_service.dart';
-import 'package:islamia/data/models/prayer/prayer_times.dart';
 import 'package:islamia/data/models/prayer/prayer_times_model.dart';
 
 class PrayerService {

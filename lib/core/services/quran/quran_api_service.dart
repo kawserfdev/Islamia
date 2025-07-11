@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:islamia/data/models/quran/audio_recitation_model.dart';
 import 'package:islamia/data/models/quran/ayah_model.dart';
 import 'package:islamia/data/models/quran/reciter_model.dart';

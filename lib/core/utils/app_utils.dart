@@ -1,5 +1,4 @@
 import 'package:islamia/core/constants/app_constants.dart';
-import 'package:islamia/data/models/prayer/prayer_times.dart';
 import 'package:islamia/presentation/providers/prayer_provider.dart';
 
 class IslamicUtils {

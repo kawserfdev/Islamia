@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/providers/prayer/prayer_providers.dart';
-import 'package:islamia/data/models/prayer/prayer_log.dart';
+import 'package:islamia/data/models/prayer/prayer_times_model.dart';
 import 'package:islamia/data/models/prayer/prayer_tracking.dart';
 
 class QazaCounterScreen extends ConsumerWidget {

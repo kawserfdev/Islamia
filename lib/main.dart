@@ -219,7 +219,7 @@ class IslamiaApp extends ConsumerWidget {
       home: const SplashScreen(),
       routes: {
         '/splash': (context) => const SplashScreen(),
-        '/sign-in': (context) => const SignInScreen(),
+        '/sign-in': (context) => const LoginScreen(),
         '/sign-up': (context) => const SignUpScreen(),
         '/phone-sign-in': (context) => const PhoneSignInScreen(),
         '/email-verification': (context) => const EmailVerificationScreen(),

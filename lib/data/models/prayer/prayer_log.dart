@@ -1,4 +1,5 @@
 import 'package:islamia/data/models/location/location.dart';
+import 'prayer_times_model.dart';
 
 class PrayerLog {
   final String id;
@@ -57,49 +58,6 @@ class PrayerLog {
       'isJamaat': isJamaat,
       'mosqueId': mosqueId,
     };
-  }
-}
-
-enum PrayerType {
-  fajr,
-  sunrise,
-  dhuhr,
-  asr,
-  maghrib,
-  isha;
-
-  String get displayName {
-    switch (this) {
-      case PrayerType.fajr:
-        return 'Fajr';
-      case PrayerType.sunrise:
-        return 'Sunrise';
-      case PrayerType.dhuhr:
-        return 'Dhuhr';
-      case PrayerType.asr:
-        return 'Asr';
-      case PrayerType.maghrib:
-        return 'Maghrib';
-      case PrayerType.isha:
-        return 'Isha';
-    }
-  }
-
-  String get arabicName {
-    switch (this) {
-      case PrayerType.fajr:
-        return 'الفجر';
-      case PrayerType.sunrise:
-        return 'الشروق';
-      case PrayerType.dhuhr:
-        return 'الظهر';
-      case PrayerType.asr:
-        return 'العصر';
-      case PrayerType.maghrib:
-        return 'المغرب';
-      case PrayerType.isha:
-        return 'العشاء';
-    }
   }
 }
 

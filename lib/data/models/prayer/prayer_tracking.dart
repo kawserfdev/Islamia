@@ -1,4 +1,4 @@
-import 'package:islamia/data/models/prayer/prayer_log.dart';
+import 'package:islamia/data/models/prayer/prayer_times_model.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'prayer_tracking.g.dart';

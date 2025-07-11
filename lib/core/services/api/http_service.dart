@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import 'package:islamia/data/models/api_response.dart';
 import '../exceptions/service_exception.dart';
 import 'api_config.dart';
@@ -192,4 +191,3 @@ class HttpService {
     _client.close();
   }
 }
-

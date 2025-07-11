@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:islamia/data/models/prayer/prayer_times_model.dart';
 
 class PrayerApiService {

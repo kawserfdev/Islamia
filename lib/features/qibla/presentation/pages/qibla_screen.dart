@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:islamia/core/providers/qibla/qibla_providers.dart';
 import 'package:islamia/data/models/qibla/qibla_model.dart';
+import 'package:islamia/features/qibla/presentation/widgets/calibration_guide.dart';
+import 'package:islamia/features/qibla/presentation/widgets/compass_widget.dart';
+import 'package:islamia/features/qibla/presentation/widgets/qibla_info_card.dart';
 
 class QiblaScreen extends ConsumerWidget {
   const QiblaScreen({Key? key}) : super(key: key);

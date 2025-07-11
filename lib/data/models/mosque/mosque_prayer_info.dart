@@ -1,4 +1,4 @@
-import 'package:islamia/data/models/prayer/prayer_log.dart';
+import 'package:islamia/data/models/prayer/prayer_times_model.dart';
 
 class MosquePrayerInfo {
   final Map<PrayerType, String?> prayerTimes;

@@ -98,7 +98,7 @@ class GreetingCard extends ConsumerWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '${islamicDate.day} ${islamicDate.islamicMonth.en} ${islamicDate.year} AH',
+                        '${islamicDate?.day} ${islamicDate?.islamicMonth.en} ${islamicDate?.year} AH',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).colorScheme.primary,

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:islamia/data/models/hadith/hadith_category.dart';
 import 'package:islamia/data/models/hadith/hadith_collection.dart';
 import 'package:islamia/data/models/hadith/hadith_model.dart';

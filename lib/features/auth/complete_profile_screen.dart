@@ -352,10 +352,11 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         gender: _selectedGender?.toLowerCase(),
-        dateOfBirth: _selectedDateOfBirth,
-        country: _countryController.text.trim(),
-        city: _cityController.text.trim(),
-        timeZone: DateTime.now().timeZoneName,
+        dateOfBirth: _selectedDateOfBirth, id: '', statistics: null, preferences: null, privacySettings: null, createdAt: DateTime.now(),
+
+        // country: _countryController.text.trim(),
+        // city: _cityController.text.trim(),
+        // timeZone: DateTime.now().timeZoneName,
       );
 
       await ref.read(userProfileControllerProvider.notifier).updateUserProfile(

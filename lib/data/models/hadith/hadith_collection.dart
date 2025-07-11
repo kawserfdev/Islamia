@@ -1,5 +1,3 @@
-import 'package:json_annotation/json_annotation.dart';
-part 'hadith_collection.g.dart';
 
 // class HadithCollection {
 //   final String id;
@@ -58,6 +56,8 @@ part 'hadith_collection.g.dart';
 // }
 
 
+import 'package:json_annotation/json_annotation.dart';
+part 'hadith_collection.g.dart';
 
 
 @JsonSerializable()
